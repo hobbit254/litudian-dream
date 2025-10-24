@@ -112,6 +112,8 @@ class AuthController extends Controller
         // 3. Mark as verified
         $user->markEmailAsVerified(); // Uses the MustVerifyEmail trait method
 
+        $user->active = 1;
+        $user->save();
         return ResponseHelper::success(
             $user->toArray(),
             'Email successfully verified. You can now log in.', 200
