@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\RolesController;
 use App\Http\Controllers\UsersController;
 use App\Http\Middleware\JwtMiddleware;
 use Illuminate\Http\Request;
@@ -30,4 +31,10 @@ Route::middleware([JwtMiddleware::class])->group(function () {
     Route::delete('users/delete', [UsersController::class, 'delete']);
     Route::put('users/activate', [UsersController::class, 'activate_deactivate']);
     Route::put('users/deactivate', [UsersController::class, 'activate_deactivate']);
+
+    // Roles
+    Route::get('roles', [RolesController::class, 'allRoles']);
+    Route::post('roles/create', [RolesController::class, 'createRole']);
+    Route::put('roles/update', [RolesController::class, 'updateRole']);
+    Route::delete('roles/delete', [RolesController::class, 'deleteRole']);
 });
