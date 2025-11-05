@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CategoriesController;
+use App\Http\Controllers\ProductController;
 use App\Http\Controllers\RolesController;
 use App\Http\Controllers\UsersController;
 use App\Http\Middleware\JwtMiddleware;
@@ -42,7 +43,14 @@ Route::middleware([JwtMiddleware::class])->group(function () {
     // Categories
     Route::get('categories', [CategoriesController::class, 'allCategories']);
     Route::post('categories/create', [CategoriesController::class, 'createCategory']);
-    Route::put('categories/update', [CategoriesController::class, 'updateCategory']);
-    Route::delete('categories/delete', [CategoriesController::class, 'deleteCategory']);
-    Route::put('categories/restore', [CategoriesController::class, 'restoreCategory']);
+    Route::post('categories/update', [CategoriesController::class, 'updateCategory']);
+    Route::post('categories/delete', [CategoriesController::class, 'deleteCategory']);
+    Route::post('categories/restore', [CategoriesController::class, 'restoreCategory']);
+
+    // Products
+    Route::get('products', [ProductController::class, 'allProducts']);
+    Route::post('products/create', [ProductController::class, 'createProduct']);
+    Route::post('products/update', [ProductController::class, 'updateProduct']);
+    Route::post('products/delete', [ProductController::class, 'deleteProduct']);
+    Route::post('products/restore', [ProductController::class, 'restoreProduct']);
 });

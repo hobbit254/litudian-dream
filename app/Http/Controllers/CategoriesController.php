@@ -75,10 +75,11 @@ class CategoriesController extends Controller
 
     public function updateCategory(Request $request): JsonResponse
     {
+
         $category = Category::where('uuid', $request->input('uuid'))->first();
 
         if (empty($category)) {
-            return ResponseHelper::error([], 'Category not found.', 404);
+            return ResponseHelper::error([], 'Category not found.', 200);
         }
         $request->validate([
             'category_name' => ['required', 'string', 'max:255', 'unique:categories,category_name,' . $category->id],
@@ -130,7 +131,7 @@ class CategoriesController extends Controller
         $request->validate([
             'uuid' => ['required', 'string', 'max:255'],
         ]);
-        $category = Category::where('uuid', $request->input('uuid'))->first();
+        $category = Category::withTrashed()->where('uuid', $request->input('uuid'))->first();
         if (empty($category)) {
             return ResponseHelper::error([], 'Category not found.', 404);
         }
