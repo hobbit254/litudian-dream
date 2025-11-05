@@ -4,6 +4,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CategoriesController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\RolesController;
+use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\UsersController;
 use App\Http\Middleware\JwtMiddleware;
 use Illuminate\Http\Request;
@@ -53,4 +54,10 @@ Route::middleware([JwtMiddleware::class])->group(function () {
     Route::post('products/update', [ProductController::class, 'updateProduct']);
     Route::post('products/delete', [ProductController::class, 'deleteProduct']);
     Route::post('products/restore', [ProductController::class, 'restoreProduct']);
+
+    // MOQ
+
+    // Settings
+    Route::get('settings', [SettingsController::class, 'index']);
+    Route::post('settings/create', [SettingsController::class, 'create']);
 });
