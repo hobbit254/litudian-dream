@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CategoriesController;
 use App\Http\Controllers\RolesController;
 use App\Http\Controllers\UsersController;
 use App\Http\Middleware\JwtMiddleware;
@@ -37,4 +38,11 @@ Route::middleware([JwtMiddleware::class])->group(function () {
     Route::post('roles/create', [RolesController::class, 'createRole']);
     Route::put('roles/update', [RolesController::class, 'updateRole']);
     Route::delete('roles/delete', [RolesController::class, 'deleteRole']);
+
+    // Categories
+    Route::get('categories', [CategoriesController::class, 'allCategories']);
+    Route::post('categories/create', [CategoriesController::class, 'createCategory']);
+    Route::put('categories/update', [CategoriesController::class, 'updateCategory']);
+    Route::delete('categories/delete', [CategoriesController::class, 'deleteCategory']);
+    Route::put('categories/restore', [CategoriesController::class, 'restoreCategory']);
 });

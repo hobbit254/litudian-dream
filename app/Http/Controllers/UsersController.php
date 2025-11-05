@@ -37,13 +37,13 @@ class UsersController extends Controller
         $query->select('users.*', 'roles.role_name');
         $query->when($startDate, function ($q) use ($startDate) {
 
-            $q->whereDate('created_at', '>=', $startDate);
+            $q->whereDate('users.created_at', '>=', $startDate);
         });
         $query->when($endDate, function ($q) use ($endDate) {
 
-            $q->whereDate('created_at', '<=', $endDate);
+            $q->whereDate('users.created_at', '<=', $endDate);
         });
-        $query->orderBy('created_at', 'desc');
+        $query->orderBy('users.created_at', 'desc');
         $usersPaginator = $query->paginate($perPage);
 
         $data = $usersPaginator->items();
@@ -57,7 +57,7 @@ class UsersController extends Controller
             'to' => $usersPaginator->lastItem(),
         ];
 
-        return response()->json([['data' => $data, 'meta' => $meta], 'Users retrieved successfully.', 200]);
+        return ResponseHelper::success(['data' => $data, 'meta' => $meta], 'Users retrieved successfully.', 200);
     }
 
     /**
