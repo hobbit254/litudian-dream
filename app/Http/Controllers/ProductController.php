@@ -35,6 +35,7 @@ class ProductController extends Controller
         });
         $query->orderBy('products.created_at', 'desc');
         $productsPaginator = $query->paginate($perPage);
+        $nextPageUrl = $productsPaginator->nextPageUrl();
         $data = $productsPaginator->items();
         $meta = [
             'total' => $productsPaginator->total(),
@@ -42,7 +43,10 @@ class ProductController extends Controller
             'currentPage' => $productsPaginator->currentPage(),
             'lastPage' => $productsPaginator->lastPage(),
             'from' => $productsPaginator->firstItem(),
-            'to' => $productsPaginator->lastItem()
+            'to' => $productsPaginator->lastItem(),
+            'nextPageUrl' => $nextPageUrl, // Null if on the last page
+            'hasMorePages' => $productsPaginator->hasMorePages()
+
         ];
         return ResponseHelper::success(['data' => $data, 'meta' => $meta], 'Products retrieved successfully.', 200);
 

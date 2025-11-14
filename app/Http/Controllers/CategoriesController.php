@@ -28,6 +28,7 @@ class CategoriesController extends Controller
         });
         $query->orderBy('created_at', 'desc');
         $categoriesPaginator = $query->paginate($perPage);
+        $nextPageUrl = $categoriesPaginator->nextPageUrl();
         $data = $categoriesPaginator->items();
         $meta = [
             'total' => $categoriesPaginator->total(),
@@ -35,7 +36,9 @@ class CategoriesController extends Controller
             'currentPage' => $categoriesPaginator->currentPage(),
             'lastPage' => $categoriesPaginator->lastPage(),
             'from' => $categoriesPaginator->firstItem(),
-            'to' => $categoriesPaginator->lastItem()
+            'to' => $categoriesPaginator->lastItem(),
+            'nextPageUrl' => $nextPageUrl, // Null if on the last page
+            'hasMorePages' => $categoriesPaginator->hasMorePages()
         ];
         return ResponseHelper::success(['data' => $data, 'meta' => $meta], 'Category list retrieved successfully.', 200);
 

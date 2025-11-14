@@ -53,7 +53,6 @@ class Category extends Model
             get: function (mixed $value, array $attributes) {
                 // Check if heroImage path exists in the database
                 if ($attributes['heroImage']) {
-                    // Use Storage::url() which is perfect for absolute paths
                     return Storage::disk('public')->url($attributes['heroImage']);
                 }
                 return null; // or return a default placeholder URL

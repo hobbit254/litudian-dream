@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CategoriesController;
+use App\Http\Controllers\OrdersController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\RolesController;
 use App\Http\Controllers\SettingsController;
@@ -60,4 +61,10 @@ Route::middleware([JwtMiddleware::class])->group(function () {
     // Settings
     Route::get('settings', [SettingsController::class, 'index']);
     Route::post('settings/create', [SettingsController::class, 'create']);
+
+    // Orders
+    Route::get('orders', [OrdersController::class, 'allOrders']);
+    Route::get('orders/{id}', [OrdersController::class, 'singleOrder']);
+    Route::post('orders/create', [OrdersController::class, 'createOrder']);
+
 });
