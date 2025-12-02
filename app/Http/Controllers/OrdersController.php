@@ -6,9 +6,12 @@ use App\Http\helpers\ResponseHelper;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Models\PaymentSchedule;
+use App\Models\Product;
+use App\Models\ProductOrderBatch;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class OrdersController extends Controller
@@ -72,13 +75,23 @@ class OrdersController extends Controller
             'amount_paid' => ['required', 'numeric'],
         ]);
 
-        $order = $this->saveOrder($request);
+        DB::beginTransaction();
+        try {
+            $order = $this->saveOrder($request);
 
-        $this->savePaymentSchedule($order, $request);
+            $this->savePaymentSchedule($order, $request);
 
-        $this->savePayment($order, $request);
+            $this->savePayment($order, $request);
 
-        return ResponseHelper::success(['data' => $order], 'Order created successfully.', 201);
+            $this->saveProductOrderBatch(json_decode($request->input('products'), true));
+            DB::commit();
+
+            return ResponseHelper::success(['data' => $order], 'Order created successfully.', 201);
+        } catch (\Exception $exception) {
+            DB::rollBack();
+            logger()->error($exception->getMessage());
+            return ResponseHelper::error([], 'There was an issue when saving the data to the database', 500);
+        }
     }
 
     /**
@@ -102,6 +115,7 @@ class OrdersController extends Controller
             'shipping_paid' => False,
             'shipping_receipt' => '',
             'service_fee' => $request->input('service_fee'),
+            'balance_amount' => 0.00
         ]);
         $payment_schedule->save();
     }
@@ -166,5 +180,80 @@ class OrdersController extends Controller
         ]);
         $order->save();
         return $order;
+    }
+
+    private function saveProductOrderBatch(mixed $products): void
+    {
+        foreach ($products as $product) {
+            $prod = Product::where('uuid', $product['id'])->first();
+
+            if (!$prod) {
+                continue;
+            }
+            // Always get the latest batch for this product
+            $latestBatch = ProductOrderBatch::where('product_id', $prod->id)
+                ->orderBy('batch_number', 'desc')
+                ->first();
+
+            /**
+             * ----------------------------------------------------------
+             * SCENARIO 1: NO BATCH EXISTS — CREATE FIRST BATCH
+             * ----------------------------------------------------------
+             */
+            if (!$latestBatch) {
+
+                ProductOrderBatch::create([
+                    'product_id' => $prod->id,
+                    'batch_number' => 1,
+                    'shipping_fee' => 0,
+                    'shipping_fee_status' => 'PENDING',
+                    'moq_status' => 'PENDING',
+                    'orders_collected' => $product['quantity'],
+                    'moq_value' => $prod->minimum_order_quantity,
+                ]);
+                continue;
+            }
+
+            /**
+             * ----------------------------------------------------------
+             * SCENARIO 2: BATCH EXISTS & IS NOT FULL — INCREMENT ORDERS
+             * ----------------------------------------------------------
+             */
+            if ($latestBatch->orders_collected < $latestBatch->moq_value) {
+
+                // Update shipping_fee if needed
+                $latestBatch->update([
+                    'orders_collected' => $latestBatch->orders_collected + $product['quantity'],
+                ]);
+
+                continue; // done with this product
+            }
+
+            /**
+             * ----------------------------------------------------------
+             * SCENARIO 3: BATCH EXISTS & IS FULL — CREATE NEW BATCH
+             * ----------------------------------------------------------
+             */
+            if ($latestBatch->orders_collected >= $latestBatch->moq_value) {
+
+                $latestBatch->update([
+                    'moq_status' => 'REACHED',
+                ]);
+
+                $newBatchNumber = $latestBatch->batch_number + 1;
+
+                ProductOrderBatch::create([
+                    'product_id' => $prod->id,
+                    'batch_number' => $newBatchNumber,
+                    'shipping_fee' => 0,
+                    'shipping_fee_status' => 'PENDING',
+                    'moq_status' => 'PENDING',
+                    'orders_collected' => $product['quantity'],
+                    'moq_value' => $prod->minimum_order_quantity,
+                ]);
+
+            }
+        }
+
     }
 }
