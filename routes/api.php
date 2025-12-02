@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CategoriesController;
+use App\Http\Controllers\MOQController;
 use App\Http\Controllers\OrdersController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\RolesController;
@@ -57,6 +58,8 @@ Route::middleware([JwtMiddleware::class])->group(function () {
     Route::post('products/restore', [ProductController::class, 'restoreProduct']);
 
     // MOQ
+    Route::get('moq/products', [MoqController::class, 'moqProducts']);
+    Route::get('moq/stats', [MoqController::class, 'moqStats']);
 
     // Settings
     Route::get('settings', [SettingsController::class, 'index']);

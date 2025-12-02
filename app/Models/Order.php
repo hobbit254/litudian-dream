@@ -55,4 +55,15 @@ class Order extends Model
             }
         });
     }
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($order) {
+            if (empty($order->order_number)) {
+                $order->order_number = 'ORD-' . strtoupper(Str::random(10));
+            }
+        });
+    }
 }
