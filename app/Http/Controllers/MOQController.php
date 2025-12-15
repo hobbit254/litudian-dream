@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use AfricasTalking\SDK\AfricasTalking;
+use App\Http\helpers\AfricasTalkingSmsHelper;
 use App\Http\helpers\ResponseHelper;
 use App\Models\Order;
+use App\Models\PaymentSchedule;
 use App\Models\Product;
 use App\Models\ProductOrderBatch;
 use Carbon\Carbon;
@@ -15,19 +18,19 @@ class MOQController extends Controller
     public function createMOQ(Request $request): JsonResponse
     {
         $request->validate([
-            'product_uuid' => ['required', 'string', 'max:255'],
+            'uuid' => ['required', 'string', 'max:255'],
             'minimum_order_quantity' => ['required', 'numeric'],
         ]);
 
-        $product = Product::where(['uuid' => $request->input('product_uuid')])->first();
+        $productOrderBatch = ProductOrderBatch::where(['uuid' => $request->input('uuid')])->first();
 
-        if (!$product) {
-            return ResponseHelper::error([], 'Product not found.', 404);
+        if (!$productOrderBatch) {
+            return ResponseHelper::error([], 'Product Order Batch not found.', 404);
         }
 
-        $product->minimum_order_quantity = $request->input('minimum_order_quantity');
-        $product->update();
-        return ResponseHelper::success(['data' => $product], 'Product MOQ value updated successfully.', 200);
+        $productOrderBatch->moq_value = $request->input('minimum_order_quantity');
+        $productOrderBatch->update();
+        return ResponseHelper::success(['data' => $productOrderBatch], 'Product MOQ value updated successfully.', 200);
     }
 
     public function moqProducts(Request $request): JsonResponse
@@ -38,7 +41,7 @@ class MOQController extends Controller
 
         $query = ProductOrderBatch::query();
         $query->join('products', 'product_order_batches.product_id', '=', 'products.id');
-        $query->select('product_order_batches.*', 'products.uuid', 'products.product_name');
+        $query->select('product_order_batches.*', 'products.uuid as product_uuid', 'products.product_name');
         $query->when($startDate, function ($q) use ($startDate) {
 
             $q->whereDate('product_order_batches.created_at', '>=', $startDate);
@@ -86,5 +89,59 @@ class MOQController extends Controller
         ];
         return ResponseHelper::success($data, 'MOQ Stats fetched successfully.', 200);
 
+    }
+
+    public function closeMOQ(Request $request): JsonResponse
+    {
+        $request->validate([
+            'uuid' => ['required', 'string', 'max:255'],
+            'shipping_price' => ['required', 'numeric'],
+        ]);
+
+        $productOrderBatch = ProductOrderBatch::where('uuid', $request->input('uuid'))->first();
+        if (!$productOrderBatch) {
+            return ResponseHelper::error([], 'Product order batch not found.', 404);
+        }
+        $productOrderBatch->moq_status = 'AWAITING_CONFIRMATION';
+        $productOrderBatch->update();
+
+        // Fetch all the orders and send sms for them to pay the shipping fee
+        $orders = Order::whereIn('id', $productOrderBatch->order_ids)->get();
+        if ($request->input('shipping_price') == 0) {
+            $this->updateShippingStatus($orders);
+        } else {
+            $this->updateShippingPaymentDetails($orders, $request->input('shipping_price'));
+        }
+
+
+        return ResponseHelper::success(['data' => $productOrderBatch], 'We have closed this Order batch and we are sending sms to the customers to pay for shipping fees.', 200);
+    }
+
+    private function updateShippingStatus($orders): void
+    {
+        foreach ($orders as $order) {
+            $order->shipping_payment_status = 'PAID';
+            $order->shipping_payment_receipt = 'FREE SHIPPING';
+            $order->update();
+        }
+    }
+
+    private function updateShippingPaymentDetails($orders, $shippingPrice): void
+    {
+        foreach ($orders as $order) {
+            $total = $order->total_with_shipping - $order->shipping_fee;
+            $order->shipping_fee = $shippingPrice;
+            $order->total_with_shipping = $total + $shippingPrice;
+            $order->update();
+
+            $payment_schedule = PaymentSchedule::where('order_id', $order->id)->first();
+            if ($payment_schedule) {
+                $payment_schedule->shipping_amount = $shippingPrice;
+                $payment_schedule->update();
+            }
+            $africasTalking = new AfricasTalkingSmsHelper();
+            $africasTalking::sendSmsNotification($order->customer_phone, 'Kindly pay a shipping fee of ' . $shippingPrice . '
+             for your order with order number ' . $order->order_number);
+        }
     }
 }

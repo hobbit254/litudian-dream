@@ -13,7 +13,7 @@ class RolesController extends Controller
 {
     public function allRoles(Request $request): JsonResponse
     {
-        $roles = UserRole::all();
+        $roles = Role::all();
         return ResponseHelper::success($roles->toArray(), 'Roles retrieved successfully.', 200);
     }
 

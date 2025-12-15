@@ -68,7 +68,7 @@ class OrdersController extends Controller
             'products' => ['required', 'json'],
             'total' => ['required', 'numeric'],
             'is_anonymous' => ['required', 'boolean'],
-            'payment_reference' => ['required', 'string'],
+            'payment_reference' => ['required', 'string', 'unique:payments,merchant_ref'],
             'shipping_fee' => ['required', 'numeric'],
             'service_fee' => ['required', 'numeric'],
             'balance_due' => ['required', 'numeric'],
@@ -83,7 +83,7 @@ class OrdersController extends Controller
 
             $this->savePayment($order, $request);
 
-            $this->saveProductOrderBatch(json_decode($request->input('products'), true));
+            $this->saveProductOrderBatch(json_decode($request->input('products'), true), $order);
             DB::commit();
 
             return ResponseHelper::success(['data' => $order], 'Order created successfully.', 201);
@@ -182,18 +182,26 @@ class OrdersController extends Controller
         return $order;
     }
 
-    private function saveProductOrderBatch(mixed $products): void
+    private function saveProductOrderBatch(mixed $products, $order): void
     {
         foreach ($products as $product) {
+
             $prod = Product::where('uuid', $product['id'])->first();
 
             if (!$prod) {
                 continue;
             }
-            // Always get the latest batch for this product
+
+            $quantity = (int)$product['quantity'];
+            $moqValue = (int)$prod->minimum_order_quantity;
+
+            // Always get latest batch
             $latestBatch = ProductOrderBatch::where('product_id', $prod->id)
                 ->orderBy('batch_number', 'desc')
                 ->first();
+
+            // Build order ID list
+            $orderIds = $latestBatch?->order_ids ?? [];
 
             /**
              * ----------------------------------------------------------
@@ -202,58 +210,95 @@ class OrdersController extends Controller
              */
             if (!$latestBatch) {
 
+                $moqStatus = ($quantity >= $moqValue) ? 'REACHED' : 'PENDING';
+
                 ProductOrderBatch::create([
                     'product_id' => $prod->id,
                     'batch_number' => 1,
                     'shipping_fee' => 0,
                     'shipping_fee_status' => 'PENDING',
-                    'moq_status' => 'PENDING',
-                    'orders_collected' => $product['quantity'],
-                    'moq_value' => $prod->minimum_order_quantity,
+                    'moq_status' => $moqStatus,
+                    'orders_collected' => $quantity,
+                    'moq_value' => $moqValue,
+                    'order_ids' => [$order->id],
                 ]);
+
                 continue;
             }
 
+
             /**
              * ----------------------------------------------------------
-             * SCENARIO 2: BATCH EXISTS & IS NOT FULL — INCREMENT ORDERS
+             * SCENARIO 2: BATCH EXISTS — ADD TO EXISTING IF NOT FULL
              * ----------------------------------------------------------
              */
             if ($latestBatch->orders_collected < $latestBatch->moq_value) {
 
-                // Update shipping_fee if needed
+                $newCollected = $latestBatch->orders_collected + $quantity;
+
+                // Determine new batch status
+                $batchMoqStatus = ($newCollected >= $latestBatch->moq_value)
+                    ? 'REACHED'
+                    : 'PENDING';
+
+                // Merge order ids
+                $latestBatch->order_ids = array_unique(array_merge($orderIds, [$order->id]));
+
                 $latestBatch->update([
-                    'orders_collected' => $latestBatch->orders_collected + $product['quantity'],
+                    'orders_collected' => $newCollected,
+                    'order_ids' => $latestBatch->order_ids,
+                    'moq_status' => $batchMoqStatus,
                 ]);
 
-                continue; // done with this product
+                continue;
             }
+
 
             /**
              * ----------------------------------------------------------
-             * SCENARIO 3: BATCH EXISTS & IS FULL — CREATE NEW BATCH
+             * SCENARIO 3: LATEST BATCH IS FULL — CREATE NEW ONE
              * ----------------------------------------------------------
              */
-            if ($latestBatch->orders_collected >= $latestBatch->moq_value) {
 
-                $latestBatch->update([
-                    'moq_status' => 'REACHED',
-                ]);
-
-                $newBatchNumber = $latestBatch->batch_number + 1;
-
-                ProductOrderBatch::create([
-                    'product_id' => $prod->id,
-                    'batch_number' => $newBatchNumber,
-                    'shipping_fee' => 0,
-                    'shipping_fee_status' => 'PENDING',
-                    'moq_status' => 'PENDING',
-                    'orders_collected' => $product['quantity'],
-                    'moq_value' => $prod->minimum_order_quantity,
-                ]);
-
+            // Mark old batch as reached (if not already)
+            if ($latestBatch->moq_status !== 'REACHED') {
+                $latestBatch->update(['moq_status' => 'REACHED']);
             }
+
+            $newBatchNumber = $latestBatch->batch_number + 1;
+
+            $newBatchMoqStatus = ($quantity >= $moqValue) ? 'REACHED' : 'PENDING';
+
+            ProductOrderBatch::create([
+                'product_id' => $prod->id,
+                'batch_number' => $newBatchNumber,
+                'shipping_fee' => 0,
+                'shipping_fee_status' => 'PENDING',
+                'moq_status' => $newBatchMoqStatus,
+                'orders_collected' => $quantity,
+                'moq_value' => $moqValue,
+                'order_ids' => [$order->id],
+            ]);
+
         }
 
     }
+
+    public function updateOrderStatus(Request $request): mixed
+    {
+        $request->validate([
+            'order_status' => 'required',
+            'uuid' => 'required'
+        ]);
+
+        $order = Order::where('uuid', $request->input('uuid'))->first();
+        if (!$order) {
+            return ResponseHelper::error([], 'Order not found.', 404);
+        }
+        $order->update([
+            'status' => $request->input('order_status'),
+        ]);
+        return ResponseHelper::success(['data' => $order], 'Order status updated.', 200);
+    }
+
 }

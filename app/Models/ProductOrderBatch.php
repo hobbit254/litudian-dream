@@ -27,6 +27,7 @@ class ProductOrderBatch extends Model
         'moq_status',
         'orders_collected',
         'moq_value',
+        'order_ids'
     ];
 
     public function getRouteKeyName(): string
@@ -42,4 +43,8 @@ class ProductOrderBatch extends Model
             }
         });
     }
+    protected $casts = [
+        'order_ids' => 'array',
+    ];
+
 }

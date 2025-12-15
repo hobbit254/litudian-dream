@@ -21,6 +21,7 @@ return new class extends Migration
             $table->string('moq_status');
             $table->integer('orders_collected')->default(0);
             $table->integer('moq_value')->default(0);
+            $table->json('order_ids')->nullable();
             $table->foreign('product_id')->references('id')->on('products')
                 ->onDelete('cascade')
                 ->onUpdate('cascade');

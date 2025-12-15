@@ -34,5 +34,10 @@ return [
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
     ],
+    'sms' => [
+        'africas_talking_username' => env('AFRICAS_TALKING_USERNAME'),
+        'africas_talking_password' => env('AFRICAS_TALKING_PASSWORD'),
+        'africas_talking_sender' => env('AFRICAS_TALKING_SENDER'),
+    ]
 
 ];

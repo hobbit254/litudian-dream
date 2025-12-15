@@ -4,6 +4,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CategoriesController;
 use App\Http\Controllers\MOQController;
 use App\Http\Controllers\OrdersController;
+use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\RolesController;
 use App\Http\Controllers\SettingsController;
@@ -60,6 +61,8 @@ Route::middleware([JwtMiddleware::class])->group(function () {
     // MOQ
     Route::get('moq/products', [MoqController::class, 'moqProducts']);
     Route::get('moq/stats', [MoqController::class, 'moqStats']);
+    Route::post('moq/create', [MoqController::class, 'createMOQ']);
+    Route::post('moq/close', [MoqController::class, 'closeMOQ']);
 
     // Settings
     Route::get('settings', [SettingsController::class, 'index']);
@@ -69,5 +72,11 @@ Route::middleware([JwtMiddleware::class])->group(function () {
     Route::get('orders', [OrdersController::class, 'allOrders']);
     Route::get('orders/{id}', [OrdersController::class, 'singleOrder']);
     Route::post('orders/create', [OrdersController::class, 'createOrder']);
+    Route::put('orders/updateOrderStatus', [OrdersController::class, 'updateOrderStatus']);
+
+    // Payments
+    Route::get('payments',[PaymentController::class, 'allPayments']);
+    Route::post('payments/create', [PaymentController::class, 'createPayment']);
+    Route::post('payments/updatePaymentStatus', [PaymentController::class, 'updatePaymentStatus']);
 
 });
