@@ -1,0 +1,9 @@
+RewriteEngine On
+
+# Redirect root to /public
+RewriteRule ^$ /public/ [L]
+
+# Redirect all other requests to /public
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ /public/$1 [L]
