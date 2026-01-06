@@ -1,0 +1,53 @@
+# cPanel.yml
+# Git-based deployment configuration for cPanel
+# Deploys your app to /home/reneeimp/api
+
+app:
+  name: reneeimports-api
+  domain: reneeimports.com
+  path: /home/reneeimp/api   # <-- deployment folder
+
+# Branch to deploy
+branch: main
+
+# Environment
+environment: production
+
+# Pre-deploy commands (run before deployment)
+pre_deploy:
+  - echo "Starting deployment..."
+  - git fetch --all
+  - git reset --hard origin/main
+  - composer install --no-dev --optimize-autoloader
+  - npm install
+  - npm run production
+  - php artisan config:cache
+  - php artisan route:cache
+  - php artisan view:cache
+
+# Post-deploy commands (run after deployment)
+post_deploy:
+  - echo "Deployment complete."
+  # Set proper permissions
+  - find /home/reneeimp/api -type d -exec chmod 755 {} \;
+  - find /home/reneeimp/api -type f -exec chmod 644 {} \;
+  # Run database migrations
+  - php artisan migrate --force
+  # Clear cache
+  - php artisan cache:clear
+  - php artisan config:clear
+
+# Ignore unnecessary files/folders
+ignore:
+  - .git
+  - node_modules
+  - vendor
+  - storage/logs
+
+# Optional: backup previous release
+backup: true
+backup_path: /home/reneeimp/backups
+
+# Notifications
+notifications:
+  email: kennguch3@gmail.com
