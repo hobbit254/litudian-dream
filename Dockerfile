@@ -14,5 +14,4 @@ RUN git config --global --add safe.directory /var/www/html
 
 RUN composer install --no-interaction --prefer-dist --optimize-autoloader
 
-EXPOSE 9000
 CMD ["php-fpm"]
