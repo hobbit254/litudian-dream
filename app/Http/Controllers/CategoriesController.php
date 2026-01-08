@@ -7,6 +7,7 @@ use App\Models\Category;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class CategoriesController extends Controller
@@ -17,7 +18,7 @@ class CategoriesController extends Controller
         $startDate = $request->input('start_date', Carbon::today());
         $endDate = $request->input('end_date', Carbon::today());
 
-        $query = Category::withTrashed();
+        //  $query = Category::withTrashed();
 //        $query->when($startDate, function ($q) use ($startDate) {
 //
 //            $q->whereDate('created_at', '>=', $startDate);
@@ -26,8 +27,8 @@ class CategoriesController extends Controller
 //
 //            $q->whereDate('created_at', '<=', $endDate);
 //        });
-        $query->orderBy('created_at', 'desc');
-        $data = $query->get();
+        //  $query->orderBy('created_at', 'desc');
+        // $data = $query->get();
 //        $categoriesPaginator = $query->paginate($perPage);
 //        $nextPageUrl = $categoriesPaginator->nextPageUrl();
 //        $data = $categoriesPaginator->items();
@@ -41,6 +42,10 @@ class CategoriesController extends Controller
 //            'nextPageUrl' => $nextPageUrl, // Null if on the last page
 //            'hasMorePages' => $categoriesPaginator->hasMorePages()
 //        ];
+        $data = Category::withTrashed()
+            ->orderBy(DB::raw('deleted_at IS NOT NULL'))
+            ->orderBy('created_at', 'desc')
+            ->get();
         return ResponseHelper::success(['data' => $data, 'meta' => []], 'Category list retrieved successfully.', 200);
 
     }
