@@ -18,29 +18,30 @@ class CategoriesController extends Controller
         $endDate = $request->input('end_date', Carbon::today());
 
         $query = Category::withTrashed();
-        $query->when($startDate, function ($q) use ($startDate) {
-
-            $q->whereDate('created_at', '>=', $startDate);
-        });
-        $query->when($endDate, function ($q) use ($endDate) {
-
-            $q->whereDate('created_at', '<=', $endDate);
-        });
+//        $query->when($startDate, function ($q) use ($startDate) {
+//
+//            $q->whereDate('created_at', '>=', $startDate);
+//        });
+//        $query->when($endDate, function ($q) use ($endDate) {
+//
+//            $q->whereDate('created_at', '<=', $endDate);
+//        });
         $query->orderBy('created_at', 'desc');
-        $categoriesPaginator = $query->paginate($perPage);
-        $nextPageUrl = $categoriesPaginator->nextPageUrl();
-        $data = $categoriesPaginator->items();
-        $meta = [
-            'total' => $categoriesPaginator->total(),
-            'perPage' => $categoriesPaginator->perPage(),
-            'currentPage' => $categoriesPaginator->currentPage(),
-            'lastPage' => $categoriesPaginator->lastPage(),
-            'from' => $categoriesPaginator->firstItem(),
-            'to' => $categoriesPaginator->lastItem(),
-            'nextPageUrl' => $nextPageUrl, // Null if on the last page
-            'hasMorePages' => $categoriesPaginator->hasMorePages()
-        ];
-        return ResponseHelper::success(['data' => $data, 'meta' => $meta], 'Category list retrieved successfully.', 200);
+        $data = $query->get();
+//        $categoriesPaginator = $query->paginate($perPage);
+//        $nextPageUrl = $categoriesPaginator->nextPageUrl();
+//        $data = $categoriesPaginator->items();
+//        $meta = [
+//            'total' => $categoriesPaginator->total(),
+//            'perPage' => $categoriesPaginator->perPage(),
+//            'currentPage' => $categoriesPaginator->currentPage(),
+//            'lastPage' => $categoriesPaginator->lastPage(),
+//            'from' => $categoriesPaginator->firstItem(),
+//            'to' => $categoriesPaginator->lastItem(),
+//            'nextPageUrl' => $nextPageUrl, // Null if on the last page
+//            'hasMorePages' => $categoriesPaginator->hasMorePages()
+//        ];
+        return ResponseHelper::success(['data' => $data, 'meta' => []], 'Category list retrieved successfully.', 200);
 
     }
 
