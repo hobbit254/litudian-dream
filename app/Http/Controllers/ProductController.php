@@ -49,8 +49,8 @@ class ProductController extends Controller
 //            'hasMorePages' => $productsPaginator->hasMorePages()
 //
 //        ];
-         $data =   $query->orderBy(DB::raw('deleted_at IS NOT NULL'))
-            ->orderBy('created_at', 'desc')
+         $data =   $query->orderBy(DB::raw('products.deleted_at IS NOT NULL'))
+            ->orderBy('products.created_at', 'desc')
             ->get();
         return ResponseHelper::success(['data' => $data, 'meta' => []], 'Products retrieved successfully.', 200);
 
