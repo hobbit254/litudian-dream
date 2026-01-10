@@ -115,14 +115,14 @@ class ProductController extends Controller
             'price' => ['required', 'numeric'],
             'original_price' => ['required', 'numeric'],
 
-            'category_id' => ['required', 'exists:categories,uuid'],
+            'category_uuid' => ['required', 'exists:categories,uuid'],
 
             'minimum_order_quantity' => ['required', 'numeric'],
             'estimated_shipping_cost' => ['required', 'numeric'],
 
-            'campaign_product' => ['required', 'numeric'],
-            'recent_product' => ['required', 'numeric'],
-            'in_stock' => ['required', 'numeric'],
+            'campaign_product' => ['required', 'boolean'],
+            'recent_product'   => ['required', 'boolean'],
+            'in_stock'         => ['required', 'boolean'],
 
             'specifications' => ['nullable', 'json'],
 
@@ -131,7 +131,7 @@ class ProductController extends Controller
 
         $dataToUpdate = $request->except(['product_image', 'uuid']);
 
-        $category = Category::where('uuid', $request->input('category_id'))->first();
+        $category = Category::where('uuid', $request->input('category_uuid'))->first();
         if ($category) {
             $dataToUpdate['category_id'] = $category->id;
         } else {
