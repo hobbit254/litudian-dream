@@ -23,6 +23,11 @@ Route::controller(AuthController::class)->group(function () {
         ->middleware('signed');
     Route::post('login', 'login');
     Route::post('register', 'register');
+
+    Route::get('categories/open', [CategoriesController::class, 'allCategories']);
+    Route::get('products/open', [ProductController::class, 'allProducts']);
+    Route::get('settings/open', [SettingsController::class, 'index']);
+    Route::get('orders/open', [OrdersController::class, 'allOrders']);
 });
 
 Route::middleware([JwtMiddleware::class])->group(function () {

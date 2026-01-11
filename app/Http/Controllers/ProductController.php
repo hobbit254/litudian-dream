@@ -120,9 +120,9 @@ class ProductController extends Controller
             'minimum_order_quantity' => ['required', 'numeric'],
             'estimated_shipping_cost' => ['required', 'numeric'],
 
-            'campaign_product' => ['required', 'boolean'],
-            'recent_product'   => ['required', 'boolean'],
-            'in_stock'         => ['required', 'boolean'],
+            'campaign_product' => ['required'],
+            'recent_product'   => ['required'],
+            'in_stock'         => ['required'],
 
             'specifications' => ['nullable', 'json'],
 
