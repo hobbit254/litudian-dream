@@ -309,7 +309,13 @@ class OrdersController extends Controller
     {
         $request->validate([
             'order_status' => 'required',
-            'uuid' => 'required'
+            'uuid' => 'required',
+            'customer_name' => 'required',
+            'customer_email' => 'required',
+            'customer_phone' => 'required',
+            'payment_reference' => 'required',
+            'product_payment_status' => 'required',
+            'shipping_payment_status' => 'required',
         ]);
 
         $order = Order::where('uuid', $request->input('uuid'))->first();
@@ -318,6 +324,13 @@ class OrdersController extends Controller
         }
         $order->update([
             'status' => $request->input('order_status'),
+            'customer_name' => $request->input('customer_name'),
+            'customer_email' => $request->input('customer_email'),
+            'customer_phone' => $request->input('customer_phone'),
+            'product_payment_status' => request('product_payment_status'),
+            'shipping_payment_status' => request('shipping_payment_status'),
+            'payment_receipt' => $request->input('payment_reference'),
+
         ]);
         return ResponseHelper::success(['data' => $order], 'Order status updated.', 200);
     }
