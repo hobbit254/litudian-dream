@@ -21,6 +21,11 @@ class OrdersController extends Controller
         $perPage = $request->input('per_page', 15);
         $startDate = $request->input('start_date', Carbon::today());
         $endDate = $request->input('end_date', Carbon::today());
+        $order_number = $request->input('order_number');
+        $customer_name = $request->input('customer_name');
+        $status = $request->input('status');
+        $product_payment_status = $request->input('product_payment_status');
+        $moq_status = $request->input('moq_status');
 
         $query = Order::query();
         $query->select(['orders.*']);
@@ -32,6 +37,22 @@ class OrdersController extends Controller
 
             $q->whereDate('orders.created_at', '<=', $endDate);
         });
+        $query->when($order_number, function ($q) use ($order_number) {
+            $q->where('orders.order_number', $order_number);
+        });
+        $query->when($customer_name, function ($q) use ($customer_name) {
+            $q->where('orders.customer_name', $customer_name);
+        });
+        $query->when($status, function ($q) use ($status) {
+            $q->where('orders.status', $status);
+        });
+        $query->when($product_payment_status, function ($q) use ($product_payment_status) {
+            $q->where('orders.product_payment_status', $product_payment_status);
+        });
+        $query->when($moq_status, function ($q) use ($moq_status) {
+            $q->where('orders.moq_status', $moq_status);
+        });
+
         $query->orderBy('orders.created_at', 'desc');
 
         $ordersPaginator = $query->paginate($perPage);
