@@ -18,6 +18,9 @@ class PaymentController extends Controller
         $perPage = $request->input('per_page', 15);
         $startDate = $request->input('start_date', Carbon::today());
         $endDate = $request->input('end_date', Carbon::today());
+        $order_number = $request->input('order_number');
+        $payment_status = $request->input('payment_status');
+        $payment_method = $request->input('payment_method');
 
         $query = Payment::query();
         $query->select([
@@ -44,6 +47,18 @@ class PaymentController extends Controller
 
         $query->when($endDate, function ($q) use ($endDate) {
             $q->whereDate('payments.created_at', '<=', $endDate);
+        });
+
+        $query->when($order_number, function ($q) use ($order_number) {
+            $q->where('payments.order_number', $order_number);
+        });
+
+        $query->when($payment_status, function ($q) use ($payment_status) {
+            $q->where('payments.payment_status', $payment_status);
+        });
+
+        $query->when($payment_method, function ($q) use ($payment_method) {
+            $q->where('payments.payment_method', $payment_method);
         });
 
         $query->orderBy('payments.created_at', 'desc');
@@ -120,6 +135,8 @@ class PaymentController extends Controller
     {
         $request->validate([
             'id' => 'required',
+            'payment_status' => 'required',
+            'payment_method' => 'required',
         ]);
 
         $payment = Payment::where('id' , $request->input('id'))->first();
@@ -149,6 +166,13 @@ class PaymentController extends Controller
 
         $payment->payment_history = json_encode($data);
         $payment->payment_status = 'VERIFIED';
+        if ($request->filled('payment_reference')) {
+            $payment->merchant_ref = $request->input('payment_reference');
+        }
+        if ($request->filled('payment_method')) {
+            $payment->payment_method = $request->input('payment_method');
+        }
+
         $payment->save();
 
         $total = Payment::where(['order_id' => $order->id, 'payment_status' => 'VERIFIED'])->sum('payment_amount');
