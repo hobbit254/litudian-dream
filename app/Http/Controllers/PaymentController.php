@@ -50,7 +50,7 @@ class PaymentController extends Controller
         });
 
         $query->when($order_number, function ($q) use ($order_number) {
-            $q->where('payments.order_number', $order_number);
+            $q->where('orders.order_number', $order_number);
         });
 
         $query->when($payment_status, function ($q) use ($payment_status) {
