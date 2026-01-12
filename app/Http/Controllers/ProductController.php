@@ -205,7 +205,7 @@ class ProductController extends Controller
     public function getProduct(string $id)
     {
         $product = Product::join('categories', 'categories.id', '=', 'products.category_id')
-            ->where('uuid', $id)
+            ->where('products.uuid', $id)
             ->first();
         if (!$product) {
             return ResponseHelper::error([], 'Product not found.', 404);
