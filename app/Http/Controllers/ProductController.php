@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\helpers\ResponseHelper;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\Reviews;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -210,7 +211,9 @@ class ProductController extends Controller
         if (!$product) {
             return ResponseHelper::error([], 'Product not found.', 404);
         } else {
-            return ResponseHelper::success(['data' => $product], 'Product retrieved successfully.', 200);
+            $reviews = Reviews::where('product_id', $product->id)->get();
+            $data = ['product' => $product, 'reviews' => $reviews];
+            return ResponseHelper::success(['data' => $data], 'Product retrieved successfully.', 200);
         }
     }
 }

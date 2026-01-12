@@ -29,6 +29,7 @@ Route::controller(AuthController::class)->group(function () {
     Route::get('products/open', [ProductController::class, 'allProducts']);
     Route::get('settings/open', [SettingsController::class, 'index']);
     Route::get('orders/open', [OrdersController::class, 'allOrders']);
+    Route::post('orders/open/create', [OrdersController::class, 'createOrder']);
     Route::get('products/open/{id}', [ProductController::class, 'getProduct']);
 
     // Reviews
