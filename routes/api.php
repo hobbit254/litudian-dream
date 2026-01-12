@@ -6,6 +6,7 @@ use App\Http\Controllers\MOQController;
 use App\Http\Controllers\OrdersController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\RolesController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\UsersController;
@@ -28,7 +29,14 @@ Route::controller(AuthController::class)->group(function () {
     Route::get('products/open', [ProductController::class, 'allProducts']);
     Route::get('settings/open', [SettingsController::class, 'index']);
     Route::get('orders/open', [OrdersController::class, 'allOrders']);
-    Route::get('products/open/{id}',[ProductController::class, 'getProduct']);
+    Route::get('products/open/{id}', [ProductController::class, 'getProduct']);
+
+    // Reviews
+    Route::get('reviews', [ReviewController::class, 'allReviews']);
+    Route::post('reviews/create', [ReviewController::class, 'createReview']);
+    Route::put('reviews/update', [ReviewController::class, 'updateReview']);
+
+
 });
 
 Route::middleware([JwtMiddleware::class])->group(function () {
@@ -59,7 +67,7 @@ Route::middleware([JwtMiddleware::class])->group(function () {
 
     // Products
     Route::get('products', [ProductController::class, 'allProducts']);
-    Route::get('products/{id}',[ProductController::class, 'getProduct']);
+    Route::get('products/{id}', [ProductController::class, 'getProduct']);
     Route::post('products/create', [ProductController::class, 'createProduct']);
     Route::post('products/update', [ProductController::class, 'updateProduct']);
     Route::post('products/delete', [ProductController::class, 'deleteProduct']);
@@ -82,7 +90,7 @@ Route::middleware([JwtMiddleware::class])->group(function () {
     Route::put('orders/updateOrderStatus', [OrdersController::class, 'updateOrderStatus']);
 
     // Payments
-    Route::get('payments',[PaymentController::class, 'allPayments']);
+    Route::get('payments', [PaymentController::class, 'allPayments']);
     Route::post('payments/create', [PaymentController::class, 'createPayment']);
     Route::post('payments/updatePaymentStatus', [PaymentController::class, 'updatePaymentStatus']);
 

@@ -23,6 +23,7 @@ class OrdersController extends Controller
         $endDate = $request->input('end_date', Carbon::today());
         $order_number = $request->input('order_number');
         $customer_name = $request->input('customer_name');
+        $customer_email = $request->input('customer_email');
         $status = $request->input('status');
         $product_payment_status = $request->input('product_payment_status');
         $moq_status = $request->input('moq_status');
@@ -42,6 +43,9 @@ class OrdersController extends Controller
         });
         $query->when($customer_name, function ($q) use ($customer_name) {
             $q->where('orders.customer_name', $customer_name);
+        });
+        $query->when($customer_email, function ($q) use ($customer_email) {
+            $q->where('orders.customer_email', $customer_email);
         });
         $query->when($status, function ($q) use ($status) {
             $q->where('orders.status', $status);
