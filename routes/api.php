@@ -36,6 +36,8 @@ Route::controller(AuthController::class)->group(function () {
     Route::post('reviews/create', [ReviewController::class, 'createReview']);
     Route::put('reviews/update', [ReviewController::class, 'updateReview']);
 
+    Route::get('settings', [SettingsController::class, 'index']);
+
 
 });
 
@@ -80,7 +82,7 @@ Route::middleware([JwtMiddleware::class])->group(function () {
     Route::post('moq/close', [MoqController::class, 'closeMOQ']);
 
     // Settings
-    Route::get('settings', [SettingsController::class, 'index']);
+
     Route::post('settings/create', [SettingsController::class, 'create']);
 
     // Orders
