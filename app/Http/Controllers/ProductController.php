@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\helpers\ResponseHelper;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\ProductImages;
 use App\Models\Reviews;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
@@ -88,16 +89,15 @@ class ProductController extends Controller
             'recent_product' => ['required', 'numeric'],
             'in_stock' => ['required', 'numeric'],
             'specifications' => ['nullable', 'json'],
-            'product_image' => ['required', 'image', 'mimes:jpeg,png,jpg,gif,svg', 'max:2048'], // max:2048 means 2MB
+            'product_image' => ['required', 'array'],
+            'product_image.*' => ['image', 'mimes:jpeg,png,jpg,gif,svg', 'max:2048'],
 
         ]);
 
         $category = Category::where('uuid', $request->input('category_id'))->first();
 
         $imagePath = null;
-        if ($request->hasFile('product_image')) {
-            $imagePath = $request->file('product_image')->store('products', 'public');
-        }
+
         $product = Product::create([
             'product_name' => $request->input('product_name'),
             'description' => $request->input('description'),
@@ -114,12 +114,18 @@ class ProductController extends Controller
         ]);
         $product->save();
 
-        return ResponseHelper::success(['data' => $product], 'Product created successfully.', 201);
+        if ($request->hasFile('product_image')) {
+            foreach ($request->file('product_image') as $image) {
+                $imagePath = $image->store('products', 'public');
+                ProductImages::create(['product_id' => $product->id, 'product_image' => $imagePath,]);
+            }
+        }
+
+        return ResponseHelper::success(['data' => $product->load('images')], 'Product created successfully.', 201);
     }
 
     public function updateProduct(Request $request): JsonResponse
     {
-
         $product = Product::where('uuid', $request->input('uuid'))->first();
 
         if (!$product) {
@@ -128,26 +134,23 @@ class ProductController extends Controller
 
         $request->validate([
             'product_name' => ['required', 'string', 'max:255', 'unique:products,product_name,' . $product->id],
-
             'description' => ['required', 'string', 'max:255'],
             'price' => ['required', 'numeric'],
             'original_price' => ['required', 'numeric'],
-
             'category_uuid' => ['required', 'exists:categories,uuid'],
-
             'minimum_order_quantity' => ['required', 'numeric'],
             'estimated_shipping_cost' => ['required', 'numeric'],
-
             'campaign_product' => ['required'],
             'recent_product' => ['required'],
             'in_stock' => ['required'],
-
             'specifications' => ['nullable', 'json'],
 
-            'product_image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,svg', 'max:2048'],
+            // ✅ Accept multiple images
+            'product_image'   => ['nullable', 'array'],
+            'product_image.*' => ['image', 'mimes:jpeg,png,jpg,gif,svg', 'max:2048'],
         ]);
 
-        $dataToUpdate = $request->except(['product_image', 'uuid']);
+        $dataToUpdate = $request->except(['product_images', 'uuid']);
 
         $category = Category::where('uuid', $request->input('category_uuid'))->first();
         if ($category) {
@@ -156,25 +159,29 @@ class ProductController extends Controller
             return ResponseHelper::error([], 'Invalid category provided.', 422);
         }
 
-        if ($request->hasFile('product_image')) {
-            // A. Delete the old image if it exists
-            if ($product->product_image) {
-                Storage::disk('public')->delete($product->product_image);
-            }
-
-            // B. Store the new image and get the path
-            $imagePath = $request->file('product_image')->store('products', 'public');
-
-            // C. Add the new image path to the update array
-            $dataToUpdate['image'] = $imagePath;
-        }
-
-
+        // ✅ Update product details
         $product->update($dataToUpdate);
 
+        // ✅ Handle multiple images
+        if ($request->hasFile('product_image')) {
+            // Option A: Delete old images if you want to replace them
+            ProductImages::where('product_id', $product->id)->delete();
 
-        return ResponseHelper::success(['data' => $product], 'Product updated successfully.', 200);
+            // Option B: Keep old images and just add new ones (comment out the above line)
+
+            foreach ($request->file('product_image') as $image) {
+                $imagePath = $image->store('products', 'public');
+
+                ProductImages::create([
+                    'product_id'    => $product->id,
+                    'product_image' => $imagePath,
+                ]);
+            }
+        }
+
+        return ResponseHelper::success(['data' => $product->load('images')], 'Product updated successfully.', 200);
     }
+
 
     public function deleteProduct(Request $request): JsonResponse
     {
