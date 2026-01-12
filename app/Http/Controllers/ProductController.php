@@ -212,8 +212,8 @@ class ProductController extends Controller
             return ResponseHelper::error([], 'Product not found.', 404);
         } else {
             $reviews = Reviews::where('product_id', $product->id)->get();
-            $data = ['product' => $product, 'reviews' => $reviews];
-            return ResponseHelper::success(['data' => $data], 'Product retrieved successfully.', 200);
+            $product['reviews'] = $reviews;
+            return ResponseHelper::success(['data' => $product], 'Product retrieved successfully.', 200);
         }
     }
 }
