@@ -28,6 +28,7 @@ Route::controller(AuthController::class)->group(function () {
     Route::get('products/open', [ProductController::class, 'allProducts']);
     Route::get('settings/open', [SettingsController::class, 'index']);
     Route::get('orders/open', [OrdersController::class, 'allOrders']);
+    Route::get('products/open/{id}',[ProductController::class, 'getProduct']);
 });
 
 Route::middleware([JwtMiddleware::class])->group(function () {
@@ -58,6 +59,7 @@ Route::middleware([JwtMiddleware::class])->group(function () {
 
     // Products
     Route::get('products', [ProductController::class, 'allProducts']);
+    Route::get('products/{id}',[ProductController::class, 'getProduct']);
     Route::post('products/create', [ProductController::class, 'createProduct']);
     Route::post('products/update', [ProductController::class, 'updateProduct']);
     Route::post('products/delete', [ProductController::class, 'deleteProduct']);

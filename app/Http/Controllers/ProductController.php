@@ -201,4 +201,16 @@ class ProductController extends Controller
         $product->restore();
         return ResponseHelper::success(['data' => $product], 'Product restored successfully.', 200);
     }
+
+    public function getProduct(string $id)
+    {
+        $product = Product::join('categories', 'categories.id', '=', 'products.category_id')
+            ->where('uuid', $id)
+            ->first();
+        if (!$product) {
+            return ResponseHelper::error([], 'Product not found.', 404);
+        } else {
+            return ResponseHelper::success(['data' => $product], 'Product retrieved successfully.', 200);
+        }
+    }
 }
