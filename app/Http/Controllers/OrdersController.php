@@ -352,7 +352,7 @@ class OrdersController extends Controller
             'product_payment_status' => request('product_payment_status'),
             'shipping_payment_status' => request('shipping_payment_status'),
             'payment_receipt' => $request->input('payment_reference'),
-            'status_history' => json_encode($status_history_entry)
+            'status_history' => json_encode($existing_history)
 
         ]);
         return ResponseHelper::success(['data' => $order], 'Order status updated.', 200);
