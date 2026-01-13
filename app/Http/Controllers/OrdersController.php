@@ -320,12 +320,30 @@ class OrdersController extends Controller
             'payment_reference' => 'required',
             'product_payment_status' => 'required',
             'shipping_payment_status' => 'required',
+            'message' => 'required',
         ]);
 
         $order = Order::where('uuid', $request->input('uuid'))->first();
         if (!$order) {
             return ResponseHelper::error([], 'Order not found.', 404);
         }
+        $newStatus = $request->input('order_status');
+        // Prevent updating with the same status
+        if ($order->status === $newStatus) {
+            return ResponseHelper::error([], 'Order already has this status.', 422);
+        }
+        $status_history_entry = [
+            'status' => $request->input('order_status'),
+            'date' => Carbon::now()->toDateTimeString(),
+            'message' => $request->input('message'),
+        ];
+        // Get existing history (assuming it's stored as JSON in DB)
+        $existing_history = $order->status_history ?? [];
+        if (!is_array($existing_history)) {
+            $existing_history = json_decode($existing_history, true) ?: [];
+        }
+        // Append new entry
+        $existing_history[] = $status_history_entry;
         $order->update([
             'status' => $request->input('order_status'),
             'customer_name' => $request->input('customer_name'),
@@ -334,6 +352,7 @@ class OrdersController extends Controller
             'product_payment_status' => request('product_payment_status'),
             'shipping_payment_status' => request('shipping_payment_status'),
             'payment_receipt' => $request->input('payment_reference'),
+            'status_history' => $status_history_entry
 
         ]);
         return ResponseHelper::success(['data' => $order], 'Order status updated.', 200);

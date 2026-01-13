@@ -110,7 +110,7 @@ class ProductController extends Controller
             'recent_product' => $request->boolean('recent_product'),
             'in_stock' => $request->boolean('in_stock'),
             'specifications' => $request->input('specifications'),
-            'image' => "",
+            'image' => " ",
         ]);
         $product->save();
 
