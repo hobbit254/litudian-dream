@@ -134,38 +134,42 @@ class PaymentController extends Controller
     public function updatePaymentStatus(Request $request): JsonResponse
     {
         $request->validate([
-            'id' => 'required',
+            'id'             => 'required',
             'payment_status' => 'required',
             'payment_method' => 'required',
         ]);
 
-        $payment = Payment::where('id' , $request->input('id'))->first();
+        $payment = Payment::find($request->input('id'));
 
         if (!$payment) {
             return ResponseHelper::error([], 'Payment not found.', 400);
-        }elseif ($payment->payment_status == 'VERIFIED') {
+        } elseif ($payment->payment_status === 'VERIFIED') {
             return ResponseHelper::error([], 'Payment already verified.', 400);
         }
+
         $order = Payment::select('orders.*')
             ->join('orders', 'orders.id', '=', 'payments.order_id')
-            ->where(['payments.id' => $request->input('id')])
+            ->where('payments.id', $request->input('id'))
             ->first();
+
         if (!$order) {
             return ResponseHelper::error([], 'Order not found.', 400);
         }
 
-        $data = [
-          $payment->payment_history
-        ];
+        // Get existing history (already cast to array)
+        $existing_history = $payment->payment_history ?? [];
 
-        $data[] = [
-            'status' => 'VERIFIED',
-            'date' => Carbon::now(),
+        // Append new entry
+        $existing_history[] = [
+            'status'  => 'VERIFIED',
+            'date'    => Carbon::now()->toDateTimeString(),
             'message' => 'Payment has been accepted by the administrator based on the payment ref passed.',
         ];
 
-        $payment->payment_history = json_encode($data);
-        $payment->payment_status = 'VERIFIED';
+        // Update payment
+        $payment->payment_history = $existing_history; // ✅ no encoding
+        $payment->payment_status  = 'VERIFIED';
+
         if ($request->filled('payment_reference')) {
             $payment->merchant_ref = $request->input('payment_reference');
         }
@@ -175,12 +179,17 @@ class PaymentController extends Controller
 
         $payment->save();
 
-        $total = Payment::where(['order_id' => $order->id, 'payment_status' => 'VERIFIED'])->sum('payment_amount');
+        // Check if order is fully paid
+        $total = Payment::where('order_id', $order->id)
+            ->where('payment_status', 'VERIFIED')
+            ->sum('payment_amount');
 
         if ($total >= $order->total_with_shipping) {
             $order->product_payment_status = 'PAID';
             $order->save();
         }
+
         return ResponseHelper::success(['data' => $payment], 'Payment status updated successfully.', 200);
     }
+
 }

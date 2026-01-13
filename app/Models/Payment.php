@@ -23,7 +23,7 @@ class Payment extends Model
     ];
 
     protected $casts = [
-        'status_history' => 'array',
+        'payment_history' => 'array',
     ];
 
 }

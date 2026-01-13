@@ -152,7 +152,7 @@ class OrdersController extends Controller
      */
     public function savePayment($order, Request $request): void
     {
-        $payment_history = [
+        $payment_history[] = [
             'status' => 'UNVERIFIED',
             'date' => Carbon::now(),
             'message' => 'Payment received successfully awaiting confirmation by the administrator based on the payment ref passed.',
@@ -179,7 +179,7 @@ class OrdersController extends Controller
     {
         $message = 'Deposit of KES ' . $request->input('amount_paid') . ' received (includes KES ' .
             $request->input('service_fee') / 2 . ' service fee)';
-        $status_history = [
+        $status_history[] = [
             'status' => 'PENDING',
             'date' => Carbon::now(),
             'message' => $message
@@ -342,7 +342,7 @@ class OrdersController extends Controller
             'message' => $request->input('message'),
         ];
 
-        // Get existing history (Laravel will cast it to array)
+        // Get existing history (already cast to array)
         $existing_history = $order->status_history ?? [];
 
         // Append new entry
@@ -357,7 +357,7 @@ class OrdersController extends Controller
             'product_payment_status'  => $request->input('product_payment_status'),
             'shipping_payment_status' => $request->input('shipping_payment_status'),
             'payment_receipt'         => $request->input('payment_reference'),
-            'status_history'          => $existing_history, // ✅ array, not json_encode
+            'status_history'          => $existing_history, // ✅ no encoding
         ]);
 
         return ResponseHelper::success(['data' => $order], 'Order status updated.', 200);
