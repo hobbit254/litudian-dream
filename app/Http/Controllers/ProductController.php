@@ -28,10 +28,12 @@ class ProductController extends Controller
         $query = Product::withTrashed();
         $query->select([
             'products.*',
+            'product_images.*',
             'categories.category_name',
             'categories.uuid as category_uuid',
         ])
-            ->join('categories', 'products.category_id', '=', 'categories.id');
+            ->join('categories', 'products.category_id', '=', 'categories.id')
+            ->join('product_images', 'products.id', '=', 'product_images.product_id');
         $query->when($startDate, function ($q) use ($startDate) {
 
             $q->whereDate('products.created_at', '>=', $startDate);

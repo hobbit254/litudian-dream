@@ -41,6 +41,7 @@ class Product extends Model
     protected $hidden = [
         'id',
         'category_id',
+        'image'
     ];
 
     public function getRouteKeyName(): string
