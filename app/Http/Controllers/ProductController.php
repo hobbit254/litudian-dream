@@ -85,9 +85,9 @@ class ProductController extends Controller
             'category_id' => ['required', 'exists:categories,uuid'],
             'minimum_order_quantity' => ['required', 'numeric'],
             'estimated_shipping_cost' => ['required', 'numeric'],
-            'campaign_product' => ['required', 'boolean'],
-            'recent_product' => ['required', 'boolean'],
-            'in_stock' => ['required', 'boolean'],
+            'campaign_product' => ['required'],
+            'recent_product' => ['required'],
+            'in_stock' => ['required'],
             'specifications' => ['nullable', 'json'],
             'product_image' => ['required', 'array'],
             'product_image.*' => ['image', 'mimes:jpeg,png,jpg,gif,svg', 'max:2048'],
@@ -106,9 +106,9 @@ class ProductController extends Controller
             'category_id' => $category->id,
             'minimum_order_quantity' => $request->input('minimum_order_quantity'),
             'estimated_shipping_cost' => $request->input('estimated_shipping_cost'),
-            'campaign_product' => $request->input('campaign_product'),
-            'recent_product' => $request->input('recent_product'),
-            'in_stock' => $request->input('in_stock'),
+            'campaign_product' => $request->boolean('campaign_product'),
+            'recent_product' => $request->boolean('recent_product'),
+            'in_stock' => $request->boolean('in_stock'),
             'specifications' => $request->input('specifications'),
             'image' => $imagePath,
         ]);
@@ -140,13 +140,13 @@ class ProductController extends Controller
             'category_uuid' => ['required', 'exists:categories,uuid'],
             'minimum_order_quantity' => ['required', 'numeric'],
             'estimated_shipping_cost' => ['required', 'numeric'],
-            'campaign_product' => ['required','boolean'],
-            'recent_product' => ['required','boolean:'],
-            'in_stock' => ['required','boolean:'],
+            'campaign_product' => ['required'],
+            'recent_product' => ['required'],
+            'in_stock' => ['required'],
             'specifications' => ['nullable', 'json'],
 
             // ✅ Accept multiple images
-            'product_image'   => ['nullable', 'array'],
+            'product_image' => ['nullable', 'array'],
             'product_image.*' => ['image', 'mimes:jpeg,png,jpg,gif,svg', 'max:2048'],
         ]);
 
@@ -160,6 +160,9 @@ class ProductController extends Controller
         }
 
         // ✅ Update product details
+        $dataToUpdate['campaign_product'] = $request->boolean('campaign_product');
+        $dataToUpdate['recent_product'] = $request->boolean('recent_product');
+        $dataToUpdate['in_stock'] = $request->boolean('in_stock');
         $product->update($dataToUpdate);
 
         // ✅ Handle multiple images
@@ -173,7 +176,7 @@ class ProductController extends Controller
                 $imagePath = $image->store('products', 'public');
 
                 ProductImages::create([
-                    'product_id'    => $product->id,
+                    'product_id' => $product->id,
                     'product_image' => $imagePath,
                 ]);
             }
