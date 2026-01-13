@@ -168,7 +168,8 @@ class ProductController extends Controller
         // ✅ Handle multiple images
         if ($request->hasFile('product_image')) {
             // Option A: Delete old images if you want to replace them
-            ProductImages::where('product_id', $product->id)->delete();
+            $imageIdsToKeep = $request->input('existing_product_image', []);
+            ProductImages::whereNotIn('uuid', $imageIdsToKeep)->delete();
 
             // Option B: Keep old images and just add new ones (comment out the above line)
 
