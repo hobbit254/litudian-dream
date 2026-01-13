@@ -31,13 +31,14 @@ class ReviewController extends Controller
             return ResponseHelper::error([], 'Product does not exist', 404);
         }
         $validated['status'] = 'pending';
+        $validated['product_id'] = $product->id;
         $review = Reviews::create($validated);
         return ResponseHelper::success(['data' => $review], 'Review created successfully.', 201);
     }
 
     public function updateReview(Request $request)
     {
-        $validated = $request->validate([
+        $request->validate([
             'uuid' => 'required|string|exists:reviews,uuid',
             'status' => 'required|string|in:pending,approved,rejected',
         ]);
