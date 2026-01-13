@@ -242,7 +242,7 @@ class ProductController extends Controller
         } else {
             $reviews = Reviews::where('product_id', $product->id)->get();
             $product['reviews'] = $reviews;
-            return ResponseHelper::success(['data' => $product], 'Product retrieved successfully.', 200);
+            return ResponseHelper::success(['data' => $product->load('images')], 'Product retrieved successfully.', 200);
         }
     }
 }
