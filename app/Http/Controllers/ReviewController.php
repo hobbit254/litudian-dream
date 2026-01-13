@@ -41,7 +41,7 @@ class ReviewController extends Controller
     {
         $request->validate([
             'uuid' => 'required|string|exists:reviews,uuid',
-            'status' => 'required|string|in:pending,approved,rejected',
+            'status' => 'required|string|in:pending,approved,rejected,hidden',
         ]);
         $review = Reviews::where('uuid', $request->uuid)->first();
         if (!$review) {
