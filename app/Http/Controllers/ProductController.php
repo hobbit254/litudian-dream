@@ -140,9 +140,9 @@ class ProductController extends Controller
             'category_uuid' => ['required', 'exists:categories,uuid'],
             'minimum_order_quantity' => ['required', 'numeric'],
             'estimated_shipping_cost' => ['required', 'numeric'],
-            'campaign_product' => ['required'],
-            'recent_product' => ['required'],
-            'in_stock' => ['required'],
+            'campaign_product' => ['required','boolean'],
+            'recent_product' => ['required','boolean:'],
+            'in_stock' => ['required','boolean:'],
             'specifications' => ['nullable', 'json'],
 
             // ✅ Accept multiple images
