@@ -57,7 +57,7 @@ class ProductController extends Controller
         });
         $query->orderBy(DB::raw('products.deleted_at IS NOT NULL'))
             ->orderBy('products.created_at', 'desc');
-        $productsPaginator = $query->load('images')->paginate($perPage);
+        $productsPaginator = $query->with('images')->paginate($perPage);
         $nextPageUrl = $productsPaginator->nextPageUrl();
         $data = $productsPaginator->items();
         $meta = [
