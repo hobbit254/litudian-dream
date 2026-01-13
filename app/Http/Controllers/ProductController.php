@@ -172,16 +172,17 @@ class ProductController extends Controller
         ProductImages::where('product_id', $product->id)->whereNotIn('uuid', $imageIdsToKeep)->delete();
 
         // Option B: Keep old images and just add new ones (comment out the above line)
+        if ($request->hasFile('product_image')) {
+            foreach ($request->file('product_image') as $image) {
+                $imagePath = $image->store('products', 'public');
 
-        foreach ($request->file('product_image') as $image) {
-            $imagePath = $image->store('products', 'public');
-
-            ProductImages::create([
-                'product_id' => $product->id,
-                'product_image' => $imagePath,
-            ]);
+                ProductImages::create([
+                    'product_id' => $product->id,
+                    'product_image' => $imagePath,
+                ]);
+            }
         }
-        
+
 
         return ResponseHelper::success(['data' => $product->load('images')], 'Product updated successfully.', 200);
     }
