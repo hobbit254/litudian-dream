@@ -115,9 +115,10 @@ class ProductController extends Controller
         $product->save();
 
         if ($request->hasFile('product_image')) {
-            foreach ($request->file('product_image') as $image) {
+            $images = $request->file('product_image');
+            foreach ($images as $index => $image) {
                 $imagePath = $image->store('products', 'public');
-                ProductImages::create(['product_id' => $product->id, 'product_image' => $imagePath,]);
+                ProductImages::create(['product_id' => $product->id, 'product_image' => $imagePath, 'primary_image' => $index === 0 ? 1 : 0,]);
             }
         }
 
@@ -168,8 +169,24 @@ class ProductController extends Controller
         // ✅ Handle multiple images
 
         // Option A: Delete old images if you want to replace them
-        $imageIdsToKeep = $request->input('existing_product_image', []);
-        ProductImages::where('product_id', $product->id)->whereNotIn('uuid', $imageIdsToKeep)->delete();
+        $imageIdsToKeep = (array)$request->input('existing_product_image', []);
+
+        // Step 1: Delete images not in the keep array
+        ProductImages::where('product_id', $product->id)
+            ->whereNotIn('uuid', $imageIdsToKeep)
+            ->delete();
+
+        // Step 2: Reset all current product images to primary_image = 0
+        ProductImages::where('product_id', $product->id)
+            ->update(['primary_image' => 0]);
+
+        // Step 3: If we have at least one ID to keep, set the first one as primary
+        if (!empty($imageIdsToKeep)) {
+            ProductImages::where('product_id', $product->id)
+                ->where('uuid', $imageIdsToKeep[0])
+                ->update(['primary_image' => 1]);
+        }
+
 
         // Option B: Keep old images and just add new ones (comment out the above line)
         if ($request->hasFile('product_image')) {
