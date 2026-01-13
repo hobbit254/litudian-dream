@@ -25,15 +25,13 @@ class ProductController extends Controller
         $min_price = request()->input('min_price');
         $max_price = request()->input('max_price');
 
-        $query = Product::withTrashed();
+        $query = Product::withTrashed()->with('images');
         $query->select([
             'products.*',
-            'product_images.*',
             'categories.category_name',
             'categories.uuid as category_uuid',
         ])
-            ->join('categories', 'products.category_id', '=', 'categories.id')
-            ->join('product_images', 'products.id', '=', 'product_images.product_id');
+            ->join('categories', 'products.category_id', '=', 'categories.id');
         $query->when($startDate, function ($q) use ($startDate) {
 
             $q->whereDate('products.created_at', '>=', $startDate);
@@ -61,7 +59,7 @@ class ProductController extends Controller
             ->orderBy('products.created_at', 'desc');
         $productsPaginator = $query->paginate($perPage);
         $nextPageUrl = $productsPaginator->nextPageUrl();
-        $data = $productsPaginator->items();
+        $data = $productsPaginator->load('images')->items();
         $meta = [
             'total' => $productsPaginator->total(),
             'perPage' => $productsPaginator->perPage(),
