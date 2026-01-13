@@ -309,6 +309,7 @@ class OrdersController extends Controller
 
     }
 
+
     public function updateOrderStatus(Request $request): mixed
     {
         $request->validate([
@@ -327,35 +328,44 @@ class OrdersController extends Controller
         if (!$order) {
             return ResponseHelper::error([], 'Order not found.', 404);
         }
+
         $newStatus = $request->input('order_status');
-        // Prevent updating with the same status
+
+        // 🚨 Prevent updating with the same status
         if ($order->status === $newStatus) {
             return ResponseHelper::error([], 'Order already has this status.', 422);
         }
+
+        // Build new history entry
         $status_history_entry = [
-            'status' => $request->input('order_status'),
-            'date' => Carbon::now()->toDateTimeString(),
+            'status'  => $newStatus,
+            'date'    => Carbon::now()->toDateTimeString(),
             'message' => $request->input('message'),
         ];
-        // Get existing history (assuming it's stored as JSON in DB)
+
+        // Get existing history (JSON column assumed)
         $existing_history = $order->status_history ?? [];
         if (!is_array($existing_history)) {
             $existing_history = json_decode($existing_history, true) ?: [];
         }
+
         // Append new entry
         $existing_history[] = $status_history_entry;
-        $order->update([
-            'status' => $request->input('order_status'),
-            'customer_name' => $request->input('customer_name'),
-            'customer_email' => $request->input('customer_email'),
-            'customer_phone' => $request->input('customer_phone'),
-            'product_payment_status' => request('product_payment_status'),
-            'shipping_payment_status' => request('shipping_payment_status'),
-            'payment_receipt' => $request->input('payment_reference'),
-            'status_history' => json_encode($existing_history)
 
+        // ✅ Save the full array, not just the single entry
+        $order->update([
+            'status'                  => $newStatus,
+            'customer_name'           => $request->input('customer_name'),
+            'customer_email'          => $request->input('customer_email'),
+            'customer_phone'          => $request->input('customer_phone'),
+            'product_payment_status'  => $request->input('product_payment_status'),
+            'shipping_payment_status' => $request->input('shipping_payment_status'),
+            'payment_receipt'         => $request->input('payment_reference'),
+            'status_history'          => json_encode($existing_history), // <-- FIXED
         ]);
+
         return ResponseHelper::success(['data' => $order], 'Order status updated.', 200);
     }
+
 
 }
