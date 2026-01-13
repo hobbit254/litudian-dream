@@ -21,4 +21,9 @@ class Payment extends Model
         'payment_history',
         'merchant_ref'
     ];
+
+    protected $casts = [
+        'status_history' => 'array',
+    ];
+
 }

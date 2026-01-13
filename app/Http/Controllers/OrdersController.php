@@ -165,7 +165,7 @@ class OrdersController extends Controller
             'payment_amount' => $request->input('amount_paid'),
             'payment_status' => 'UNVERIFIED',
             'payment_unique_ref' => Str::uuid(),
-            'payment_history' => json_encode($payment_history),
+            'payment_history' => $payment_history,
             'merchant_ref' => $request->input('payment_reference'),
         ]);
         $payment->save();
@@ -193,7 +193,7 @@ class OrdersController extends Controller
             'total' => $request->input('total'),
             'is_anonymous' => $request->input('is_anonymous'),
             'status' => 'AWAITING_BALANCE',
-            'status_history' => json_encode($status_history),
+            'status_history' => $status_history,
             'payment_receipt' => $request->input('payment_reference'),
             'shipping_fee' => $request->input('shipping_fee'),
             'total_with_shipping' => $request->input('total'),
@@ -309,7 +309,6 @@ class OrdersController extends Controller
 
     }
 
-
     public function updateOrderStatus(Request $request): mixed
     {
         $request->validate([
@@ -343,16 +342,13 @@ class OrdersController extends Controller
             'message' => $request->input('message'),
         ];
 
-        // Get existing history (JSON column assumed)
+        // Get existing history (Laravel will cast it to array)
         $existing_history = $order->status_history ?? [];
-        if (!is_array($existing_history)) {
-            $existing_history = json_decode($existing_history, true) ?: [];
-        }
 
         // Append new entry
         $existing_history[] = $status_history_entry;
 
-        // ✅ Save the full array, not just the single entry
+        // Update order with full history
         $order->update([
             'status'                  => $newStatus,
             'customer_name'           => $request->input('customer_name'),
@@ -361,11 +357,12 @@ class OrdersController extends Controller
             'product_payment_status'  => $request->input('product_payment_status'),
             'shipping_payment_status' => $request->input('shipping_payment_status'),
             'payment_receipt'         => $request->input('payment_reference'),
-            'status_history'          => json_encode($existing_history), // <-- FIXED
+            'status_history'          => $existing_history, // ✅ array, not json_encode
         ]);
 
         return ResponseHelper::success(['data' => $order], 'Order status updated.', 200);
     }
+
 
 
 }
