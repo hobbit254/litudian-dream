@@ -166,23 +166,22 @@ class ProductController extends Controller
         $product->update($dataToUpdate);
 
         // ✅ Handle multiple images
-        if ($request->hasFile('product_image')) {
-            // Option A: Delete old images if you want to replace them
-            $imageIdsToKeep = $request->input('existing_product_image', []);
-            ProductImages::where('product_id', $product->id)->whereNotIn('uuid', $imageIdsToKeep)->delete();
-            dd($imageIdsToKeep);
 
-            // Option B: Keep old images and just add new ones (comment out the above line)
+        // Option A: Delete old images if you want to replace them
+        $imageIdsToKeep = $request->input('existing_product_image', []);
+        ProductImages::where('product_id', $product->id)->whereNotIn('uuid', $imageIdsToKeep)->delete();
 
-            foreach ($request->file('product_image') as $image) {
-                $imagePath = $image->store('products', 'public');
+        // Option B: Keep old images and just add new ones (comment out the above line)
 
-                ProductImages::create([
-                    'product_id' => $product->id,
-                    'product_image' => $imagePath,
-                ]);
-            }
+        foreach ($request->file('product_image') as $image) {
+            $imagePath = $image->store('products', 'public');
+
+            ProductImages::create([
+                'product_id' => $product->id,
+                'product_image' => $imagePath,
+            ]);
         }
+        
 
         return ResponseHelper::success(['data' => $product->load('images')], 'Product updated successfully.', 200);
     }
