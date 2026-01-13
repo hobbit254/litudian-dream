@@ -234,16 +234,18 @@ class ProductController extends Controller
 
     public function getProduct(string $id)
     {
-        $product = Product::join('categories', 'categories.id', '=', 'products.category_id')
+        $product = Product::with('images')
             ->where('products.uuid', $id)
-            ->with('images')
+            ->join('categories', 'categories.id', '=', 'products.category_id')
+            ->select('products.*', 'categories.category_name', 'categories.uuid as category_uuid')
             ->first();
+
         if (!$product) {
             return ResponseHelper::error([], 'Product not found.', 404);
         } else {
             $reviews = Reviews::where('product_id', $product->id)->get();
             $product['reviews'] = $reviews;
-            return ResponseHelper::success(['data' => $product->load('images')], 'Product retrieved successfully.', 200);
+            return ResponseHelper::success(['data' => $product], 'Product retrieved successfully.', 200);
         }
     }
 }
