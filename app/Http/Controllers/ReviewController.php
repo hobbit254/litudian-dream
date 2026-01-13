@@ -32,6 +32,7 @@ class ReviewController extends Controller
         }
         $validated['status'] = 'pending';
         $validated['product_id'] = $product->id;
+        $validated['review_image'] = null;
         $review = Reviews::create($validated);
         return ResponseHelper::success(['data' => $review], 'Review created successfully.', 201);
     }
