@@ -18,8 +18,8 @@ class ProductController extends Controller
     public function allProducts(Request $request): JsonResponse
     {
         $perPage = $request->input('per_page', 15);
-        $startDate = $request->input('start_date', Carbon::today());
-        $endDate = $request->input('end_date', Carbon::today());
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
         $category_name = request()->input('category_name');
         $product_name = request()->input('product_name');
         $min_price = request()->input('min_price');

@@ -36,8 +36,8 @@ class MOQController extends Controller
     public function moqProducts(Request $request): JsonResponse
     {
         $perPage = $request->input('per_page', 15);
-        $startDate = $request->input('start_date', Carbon::today());
-        $endDate = $request->input('end_date', Carbon::today());
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
 
         $query = ProductOrderBatch::query();
         $query->join('products', 'product_order_batches.product_id', '=', 'products.id');
@@ -71,13 +71,46 @@ class MOQController extends Controller
 
     public function moqStats(Request $request): JsonResponse
     {
-        $productsBelowMOQ = ProductOrderBatch::where('moq_status', 'PENDING')->count();
-        $productsAwaitingConfirmation = ProductOrderBatch::where('moq_status', 'REACHED')->count();
-        $batchesCompleted = ProductOrderBatch::where('shipping_fee_status', 'PROCESSED')->count();
-        $totalShippingFeesCollected = Order::where('shipping_payment_status', 'PAID')->sum('shipping_fee');
-        $ordersAwaitingShippingPayment = Order::where('shipping_payment_status', 'UNPAID')->count();
-        $ordersBlockedFromDelivery = Order::where(['shipping_payment_status' => 'UNPAID',
-            'shipping_verification_status' => 'UNVERIFIED'])->count();
+        // Get start and end dates from request
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+
+        // If not provided, default to last month
+        if (!$startDate || !$endDate) {
+            $startDate = now()->subMonth()->startOfDay();
+            $endDate = now()->endOfDay();
+        } else {
+            $startDate = Carbon::parse($startDate)->startOfDay();
+            $endDate = Carbon::parse($endDate)->endOfDay();
+        }
+
+        // Apply date filters to queries
+        $productsBelowMOQ = ProductOrderBatch::where('moq_status', 'PENDING')
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->count();
+
+        $productsAwaitingConfirmation = ProductOrderBatch::where('moq_status', 'REACHED')
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->count();
+
+        $batchesCompleted = ProductOrderBatch::where('shipping_fee_status', 'PROCESSED')
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->count();
+
+        $totalShippingFeesCollected = Order::where('shipping_payment_status', 'PAID')
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->sum('shipping_fee');
+
+        $ordersAwaitingShippingPayment = Order::where('shipping_payment_status', 'UNPAID')
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->count();
+
+        $ordersBlockedFromDelivery = Order::where([
+            'shipping_payment_status' => 'UNPAID',
+            'shipping_verification_status' => 'UNVERIFIED'
+        ])
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->count();
 
         $data = [
             'products_belowMOQ' => $productsBelowMOQ,
@@ -87,9 +120,10 @@ class MOQController extends Controller
             'orders_blocked_from_delivery' => $ordersBlockedFromDelivery,
             'orders_awaiting_shipping_payment' => $ordersAwaitingShippingPayment,
         ];
-        return ResponseHelper::success($data, 'MOQ Stats fetched successfully.', 200);
 
+        return ResponseHelper::success($data, 'MOQ Stats fetched successfully.', 200);
     }
+
 
     public function closeMOQ(Request $request): JsonResponse
     {

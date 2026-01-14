@@ -69,7 +69,7 @@ class OrdersController extends Controller
             'lastPage' => $ordersPaginator->lastPage(),
             'from' => $ordersPaginator->firstItem(),
             'to' => $ordersPaginator->lastItem(),
-            'nextPageUrl' => $nextPageUrl, // Null if on the last page
+            'nextPageUrl' => $nextPageUrl,
             'hasMorePages' => $ordersPaginator->hasMorePages()
         ];
         return ResponseHelper::success(['data' => $data, 'meta' => $meta], 'Orders retrieved successfully.', 200);
@@ -357,7 +357,7 @@ class OrdersController extends Controller
             'product_payment_status'  => $request->input('product_payment_status'),
             'shipping_payment_status' => $request->input('shipping_payment_status'),
             'payment_receipt'         => $request->input('payment_reference'),
-            'status_history'          => $existing_history, // ✅ no encoding
+            'status_history'          => $existing_history, //
         ]);
 
         return ResponseHelper::success(['data' => $order], 'Order status updated.', 200);
