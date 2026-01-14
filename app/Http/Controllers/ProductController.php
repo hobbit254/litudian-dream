@@ -30,8 +30,11 @@ class ProductController extends Controller
             'products.*',
             'categories.category_name',
             'categories.uuid as category_uuid',
+            'product_order_batches.orders_collected', 'product_order_batches.moq_status', '
+                product_order_batches.moq_value as product_order_batches_moq_value'
         ])
-            ->join('categories', 'products.category_id', '=', 'categories.id');
+            ->join('categories', 'products.category_id', '=', 'categories.id')
+            ->leftJoin('product_order_batches', 'product_order_batches.product_id', 'products.id');
         $query->when($startDate, function ($q) use ($startDate) {
 
             $q->whereDate('products.created_at', '>=', $startDate);
@@ -237,7 +240,10 @@ class ProductController extends Controller
         $product = Product::with('images')
             ->where('products.uuid', $id)
             ->join('categories', 'categories.id', '=', 'products.category_id')
-            ->select('products.*', 'categories.category_name', 'categories.uuid as category_uuid')
+            ->leftJoin('product_order_batches', 'product_order_batches.product_id', 'products.id')
+            ->select('products.*', 'categories.category_name', 'categories.uuid as category_uuid',
+                'product_order_batches.orders_collected', 'product_order_batches.moq_status', '
+                product_order_batches.moq_value as product_order_batches_moq_value')
             ->first();
 
         if (!$product) {
