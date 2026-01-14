@@ -42,19 +42,29 @@ class MOQController extends Controller
         $query = ProductOrderBatch::query();
         $query->join('products', 'product_order_batches.product_id', '=', 'products.id');
         $query->select('product_order_batches.*', 'products.uuid as product_uuid', 'products.product_name');
-        $query->when($startDate, function ($q) use ($startDate) {
 
+        $query->when($startDate, function ($q) use ($startDate) {
             $q->whereDate('product_order_batches.created_at', '>=', $startDate);
         });
         $query->when($endDate, function ($q) use ($endDate) {
-
             $q->whereDate('product_order_batches.created_at', '<=', $endDate);
         });
+
         $query->orderBy('product_order_batches.created_at', 'desc');
 
         $productsOrderBatchPaginator = $query->paginate($perPage);
         $nextPageUrl = $productsOrderBatchPaginator->nextPageUrl();
-        $data = $productsOrderBatchPaginator->items();
+
+        // Transform data: replace order_ids with order_uuid
+        $data = collect($productsOrderBatchPaginator->items())->map(function ($item) {
+            // Ensure order_ids exists and is an array
+            if (!empty($item->order_ids) && is_array($item->order_ids)) {
+                $orderUuids = Order::whereIn('id', $item->order_ids)->pluck('uuid')->toArray();
+                $item->order_ids = $orderUuids; // Replace IDs with UUIDs
+            }
+            return $item;
+        });
+
         $meta = [
             'total' => $productsOrderBatchPaginator->total(),
             'perPage' => $productsOrderBatchPaginator->perPage(),
@@ -68,6 +78,7 @@ class MOQController extends Controller
 
         return ResponseHelper::success(['data' => $data, 'meta' => $meta], 'Product MOQ fetched successfully.', 200);
     }
+
 
     public function moqStats(Request $request): JsonResponse
     {
