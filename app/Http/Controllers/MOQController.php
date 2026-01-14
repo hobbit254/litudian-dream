@@ -114,7 +114,8 @@ class MOQController extends Controller
         }
 
 
-        return ResponseHelper::success(['data' => $productOrderBatch], 'We have closed this Order batch and we are sending sms to the customers to pay for shipping fees.', 200);
+        return ResponseHelper::success(['data' => $productOrderBatch],
+            'We have closed this Order batch and we are sending sms to the customers to pay for shipping fees.', 200);
     }
 
     private function updateShippingStatus($orders): void

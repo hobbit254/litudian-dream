@@ -28,9 +28,10 @@ class AfricasTalkingSmsHelper
                 'message' => $message,
                 'from' => $from
             ]);
+            logger()->info($result);
 
         } catch (Exception $e) {
-            logger()->error($e);
+            logger()->error($e->getMessage());
         }
     }
 }

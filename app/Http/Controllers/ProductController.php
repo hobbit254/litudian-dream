@@ -30,8 +30,8 @@ class ProductController extends Controller
             'products.*',
             'categories.category_name',
             'categories.uuid as category_uuid',
-            'product_order_batches.orders_collected', 'product_order_batches.moq_status', '
-                product_order_batches.moq_value as product_order_batches_moq_value'
+            'product_order_batches.orders_collected', 'product_order_batches.moq_status',
+            'product_order_batches.moq_value as product_order_batches_moq_value'
         ])
             ->join('categories', 'products.category_id', '=', 'categories.id')
             ->leftJoin('product_order_batches', 'product_order_batches.product_id', 'products.id');
@@ -242,8 +242,8 @@ class ProductController extends Controller
             ->join('categories', 'categories.id', '=', 'products.category_id')
             ->leftJoin('product_order_batches', 'product_order_batches.product_id', 'products.id')
             ->select('products.*', 'categories.category_name', 'categories.uuid as category_uuid',
-                'product_order_batches.orders_collected', 'product_order_batches.moq_status', '
-                product_order_batches.moq_value as product_order_batches_moq_value')
+                'product_order_batches.orders_collected', 'product_order_batches.moq_status',
+                'product_order_batches.moq_value as product_order_batches_moq_value')
             ->first();
 
         if (!$product) {
