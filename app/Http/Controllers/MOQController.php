@@ -136,7 +136,7 @@ class MOQController extends Controller
         if (!$productOrderBatch) {
             return ResponseHelper::error([], 'Product order batch not found.', 404);
         }
-        $productOrderBatch->moq_status = 'AWAITING_CONFIRMATION';
+        $productOrderBatch->moq_status = 'AWAITING_SHIPPING_FEE';
         $productOrderBatch->update();
 
         // Fetch all the orders and send sms for them to pay the shipping fee
