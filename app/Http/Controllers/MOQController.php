@@ -178,6 +178,7 @@ class MOQController extends Controller
             $total = $order->total_with_shipping - $order->shipping_fee;
             $order->shipping_fee = $shippingPrice;
             $order->total_with_shipping = $total + $shippingPrice;
+            $order->status = 'MOQ_ACHIEVED';
             $order->update();
 
             $payment_schedule = PaymentSchedule::where('order_id', $order->id)->first();
