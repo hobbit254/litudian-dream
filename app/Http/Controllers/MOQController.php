@@ -175,10 +175,25 @@ class MOQController extends Controller
     private function updateShippingPaymentDetails($orders, $shippingPrice): void
     {
         foreach ($orders as $order) {
+
+            // Build new history entry
+            $status_history_entry = [
+                'status'  => 'MOQ_ACHIEVED',
+                'date'    => Carbon::now()->toDateTimeString(),
+                'message' => "We have closed the MOQ for this order",
+            ];
+
+            // Get existing history (already cast to array)
+            $existing_history = $order->status_history ?? [];
+
+            // Append new entry
+            $existing_history[] = $status_history_entry;
+
             $total = $order->total_with_shipping - $order->shipping_fee;
             $order->shipping_fee = $shippingPrice;
             $order->total_with_shipping = $total + $shippingPrice;
             $order->status = 'MOQ_ACHIEVED';
+            $order->status_history = $status_history_entry;
             $order->update();
 
             $payment_schedule = PaymentSchedule::where('order_id', $order->id)->first();
