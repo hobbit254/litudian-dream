@@ -29,7 +29,8 @@ class Order extends Model
         'shipping_payment_receipt',
         'shipping_verification_status',
         'total_with_shipping',
-        'moq_status'
+        'moq_status',
+        'service_fee'
     ];
 
     protected $hidden = [

@@ -209,6 +209,7 @@ class OrdersController extends Controller
             'shipping_payment_receipt' => '',
             'shipping_verification_status' => 'UNVERIFIED',
             'moq_status' => 'AWAITING_CONFIRMATION',
+            'service_fee' => $request->input('service_fee'),
         ]);
         $order->save();
         return $order;
