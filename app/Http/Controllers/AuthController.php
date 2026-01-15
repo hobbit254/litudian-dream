@@ -7,6 +7,7 @@ use App\Mail\EmailVerificationMail;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\UserRole;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -101,12 +102,12 @@ class AuthController extends Controller
         $user = User::find($id);
         // 1. Check if user exists and hash matches the current email
         if (!$user || $hash !== sha1($user->email)) {
-            return ResponseHelper::error([], 'Invalid verification link.', 401);
+            return response()->json([ 'redirect' => 'https://reneeimports.com/auth', 'message' => 'Invalid verification link.' ]);
         }
 
         // 2. Check if already verified
         if ($user->hasVerifiedEmail()) { // Uses the MustVerifyEmail trait method
-            return ResponseHelper::success([], 'Email already verified.', 200);
+            return response()->json([ 'redirect' => 'https://reneeimports.com/auth', 'message' => 'Email already verified.' ]);
         }
 
         // 3. Mark as verified
@@ -114,10 +115,7 @@ class AuthController extends Controller
 
         $user->active = 1;
         $user->save();
-        return ResponseHelper::success(
-            $user->toArray(),
-            'Email successfully verified. You can now log in.', 200
-        );
+        return response()->json(['redirect' => 'https://reneeimports.com/auth', 'message' => 'Your email has been verified.']);
     }
 
     public function logout(): JsonResponse
