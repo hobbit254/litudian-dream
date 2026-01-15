@@ -29,12 +29,13 @@ class EmailVerificationMail extends Mailable
         // Generate the actual Laravel signed verification URL
         $verificationUrl = URL::temporarySignedRoute(
             'verification.verify',
-            now()->addMinutes(60), // Link expires in 60 minutes
-            [
-                'id' => $user->id,
-                'hash' => sha1($user->email),
-            ]
+            now()->addMinutes(60),
+            ['id' => $user->id, 'hash' => sha1($user->email)],
+            true
         );
+
+        $verificationUrl = preg_replace('/^http:/', 'https:', $verificationUrl);
+
 
         // Wrap it in your Next.js frontend URL
         $this->frontendUrl = 'https://reneeimports.com/verify-email?redirect=' . urlencode($verificationUrl);
