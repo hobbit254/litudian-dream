@@ -95,7 +95,7 @@ class PaymentController extends Controller
         if (!$order) {
             return ResponseHelper::error([], 'Order not found.', 400);
         }
-        $payment_history = [
+        $payment_history[] = [
             'status' => 'UNVERIFIED',
             'date' => Carbon::now(),
             'message' => 'Payment received successfully awaiting confirmation by the administrator based on the payment ref passed.',
@@ -108,7 +108,7 @@ class PaymentController extends Controller
             'payment_amount' => $request->input('amount_paid'),
             'payment_status' => 'UNVERIFIED',
             'payment_unique_ref' => Str::uuid(),
-            'payment_history' => json_encode($payment_history),
+            'payment_history' => $payment_history,
             'merchant_ref' => $request->input('payment_reference'),
         ]);
         $payment->save();
