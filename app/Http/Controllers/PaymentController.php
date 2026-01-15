@@ -110,6 +110,7 @@ class PaymentController extends Controller
             'payment_unique_ref' => Str::uuid(),
             'payment_history' => $payment_history,
             'merchant_ref' => $request->input('payment_reference'),
+            'payment_type' => $request->input('payment_type'),
         ]);
         $payment->save();
 
@@ -185,10 +186,18 @@ class PaymentController extends Controller
             ->where('payment_status', 'VERIFIED')
             ->sum('payment_amount');
 
-        if ($total >= $order->total_with_shipping) {
-            $order->product_payment_status = 'PAID';
-            $order->save();
+        if ($payment->payment_type === 'SHIPPING_FEE') {
+            if ($total >= $order->shipping_fee) {
+                $order->shipping_payment_status = 'PAID';
+                $order->save();
+            }
+        }else{
+            if ($total >= $order->total) {
+                $order->product_payment_status = 'PAID';
+                $order->save();
+            }
         }
+
 
         return ResponseHelper::success(['data' => $payment], 'Payment status updated successfully.', 200);
     }

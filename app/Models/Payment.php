@@ -19,7 +19,8 @@ class Payment extends Model
         'payment_status',
         'payment_unique_ref',
         'payment_history',
-        'merchant_ref'
+        'merchant_ref',
+        'payment_type'
     ];
 
     protected $casts = [
