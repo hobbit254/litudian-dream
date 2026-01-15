@@ -26,7 +26,7 @@ Route::controller(AuthController::class)->group(function () {
     Route::post('register', 'register');
 
     Route::get('categories/open', [CategoriesController::class, 'allCategories']);
-    Route::get('products/open', [ProductController::class, 'allProducts']);
+    Route::get('products/open', [ProductController::class, 'allProductsOpen']);
     Route::get('settings/open', [SettingsController::class, 'index']);
     Route::get('orders/open', [OrdersController::class, 'allOrders']);
     Route::post('orders/open/create', [OrdersController::class, 'createOrder']);

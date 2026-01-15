@@ -20,49 +20,56 @@ class ProductController extends Controller
         $perPage = $request->input('per_page', 15);
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
-        $category_name = request()->input('category_name');
-        $product_name = request()->input('product_name');
-        $min_price = request()->input('min_price');
-        $max_price = request()->input('max_price');
+        $category_name = $request->input('category_name');
+        $product_name = $request->input('product_name');
+        $min_price = $request->input('min_price');
+        $max_price = $request->input('max_price');
 
         $query = Product::withTrashed()->with('images');
+
         $query->select([
             'products.*',
             'categories.category_name',
             'categories.uuid as category_uuid',
-            'product_order_batches.orders_collected', 'product_order_batches.moq_status',
+            'product_order_batches.orders_collected',
+            'product_order_batches.moq_status',
             'product_order_batches.moq_value as product_order_batches_moq_value'
         ])
             ->join('categories', 'products.category_id', '=', 'categories.id')
-            ->leftJoin('product_order_batches', 'product_order_batches.product_id', 'products.id');
-        $query->when($startDate, function ($q) use ($startDate) {
+            ->leftJoin('product_order_batches', function ($join) {
+                $join->on('product_order_batches.product_id', '=', 'products.id')
+                    ->whereRaw('product_order_batches.id = (
+                 SELECT MAX(id)
+                 FROM product_order_batches pob
+                 WHERE pob.product_id = products.id
+             )');
+            });
 
-            $q->whereDate('products.created_at', '>=', $startDate);
-        });
-        $query->when($endDate, function ($q) use ($endDate) {
+        // Filters
+        $query->when($startDate, fn($q) => $q->whereDate('products.created_at', '>=', $startDate));
+        $query->when($endDate, fn($q) => $q->whereDate('products.created_at', '<=', $endDate));
+        $query->when($category_name, fn($q) => $q->whereLike('categories.category_name', $category_name));
+        $query->when($product_name, fn($q) => $q->where('products.product_name', $product_name));
 
-            $q->whereDate('products.created_at', '<=', $endDate);
-        });
-        $query->when($category_name, function ($q) use ($category_name) {
-            $q->whereLike('categories.category_name', $category_name);
-        });
-        $query->when($product_name, function ($q) use ($product_name) {
-            $q->where('products.product_name', $product_name);
-        });
-        $query->when(request()->filled('min_price') && request()->filled('max_price'), function ($q) {
-            $q->whereBetween('products.price', [request()->input('min_price'), request()->input('max_price')]);
-        });
-        $query->when(request()->filled('min_price') && !request()->filled('max_price'), function ($q) {
-            $q->where('products.price', '>=', request()->input('min_price'));
-        });
-        $query->when(!request()->filled('min_price') && request()->filled('max_price'), function ($q) {
-            $q->where('products.price', '<=', request()->input('max_price'));
-        });
+        $query->when($min_price && $max_price, fn($q) =>
+        $q->whereBetween('products.price', [$min_price, $max_price])
+        );
+        $query->when($min_price && !$max_price, fn($q) =>
+        $q->where('products.price', '>=', $min_price)
+        );
+        $query->when(!$min_price && $max_price, fn($q) =>
+        $q->where('products.price', '<=', $max_price)
+        );
+
+        // Order
         $query->orderBy(DB::raw('products.deleted_at IS NOT NULL'))
             ->orderBy('products.created_at', 'desc');
-        $productsPaginator = $query->with('images')->paginate($perPage);
+
+        // Paginate
+        $productsPaginator = $query->paginate($perPage);
         $nextPageUrl = $productsPaginator->nextPageUrl();
         $data = $productsPaginator->items();
+
         $meta = [
             'total' => $productsPaginator->total(),
             'perPage' => $productsPaginator->perPage(),
@@ -70,13 +77,83 @@ class ProductController extends Controller
             'lastPage' => $productsPaginator->lastPage(),
             'from' => $productsPaginator->firstItem(),
             'to' => $productsPaginator->lastItem(),
-            'nextPageUrl' => $nextPageUrl, // Null if on the last page
+            'nextPageUrl' => $nextPageUrl,
             'hasMorePages' => $productsPaginator->hasMorePages()
-
         ];
-        return ResponseHelper::success(['data' => $data, 'meta' => $meta], 'Products retrieved successfully.', 200);
 
+        return ResponseHelper::success(['data' => $data, 'meta' => $meta], 'Products retrieved successfully.', 200);
     }
+
+    public function allProductsOpen(Request $request): JsonResponse
+    {
+        $perPage = $request->input('per_page', 15);
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+        $category_name = $request->input('category_name');
+        $product_name = $request->input('product_name');
+        $min_price = $request->input('min_price');
+        $max_price = $request->input('max_price');
+
+        $query = Product::with('images');
+
+        $query->select([
+            'products.*',
+            'categories.category_name',
+            'categories.uuid as category_uuid',
+            'product_order_batches.orders_collected',
+            'product_order_batches.moq_status',
+            'product_order_batches.moq_value as product_order_batches_moq_value'
+        ])
+            ->join('categories', 'products.category_id', '=', 'categories.id')
+            ->leftJoin('product_order_batches', function ($join) {
+                $join->on('product_order_batches.product_id', '=', 'products.id')
+                    ->whereRaw('product_order_batches.id = (
+                 SELECT MAX(id)
+                 FROM product_order_batches pob
+                 WHERE pob.product_id = products.id
+             )');
+            });
+
+        // Filters
+        $query->when($startDate, fn($q) => $q->whereDate('products.created_at', '>=', $startDate));
+        $query->when($endDate, fn($q) => $q->whereDate('products.created_at', '<=', $endDate));
+        $query->when($category_name, fn($q) => $q->whereLike('categories.category_name', $category_name));
+        $query->when($product_name, fn($q) => $q->where('products.product_name', $product_name));
+
+        $query->when($min_price && $max_price, fn($q) =>
+        $q->whereBetween('products.price', [$min_price, $max_price])
+        );
+        $query->when($min_price && !$max_price, fn($q) =>
+        $q->where('products.price', '>=', $min_price)
+        );
+        $query->when(!$min_price && $max_price, fn($q) =>
+        $q->where('products.price', '<=', $max_price)
+        );
+
+        // Order
+        $query->orderBy(DB::raw('products.deleted_at IS NOT NULL'))
+            ->orderBy('products.created_at', 'desc');
+
+        // Paginate
+        $productsPaginator = $query->paginate($perPage);
+        $nextPageUrl = $productsPaginator->nextPageUrl();
+        $data = $productsPaginator->items();
+
+        $meta = [
+            'total' => $productsPaginator->total(),
+            'perPage' => $productsPaginator->perPage(),
+            'currentPage' => $productsPaginator->currentPage(),
+            'lastPage' => $productsPaginator->lastPage(),
+            'from' => $productsPaginator->firstItem(),
+            'to' => $productsPaginator->lastItem(),
+            'nextPageUrl' => $nextPageUrl,
+            'hasMorePages' => $productsPaginator->hasMorePages()
+        ];
+
+        return ResponseHelper::success(['data' => $data, 'meta' => $meta], 'Products retrieved successfully.', 200);
+    }
+
+
 
     public function createProduct(Request $request): JsonResponse
     {

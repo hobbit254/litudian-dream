@@ -202,8 +202,7 @@ class MOQController extends Controller
                 $payment_schedule->shipping_amount = $shippingPrice;
                 $payment_schedule->update();
             }
-            SendSmsNotificationJob::dispatch($order->customer_phone, 'Kindly pay a shipping fee of ' . $shippingPrice . '
-             for your order with order number ' . $order->order_number);
+            SendSmsNotificationJob::dispatch($order->customer_phone, 'Kindly pay a shipping fee of ' . $shippingPrice . ' for your order with order number ' . $order->order_number);
         }
     }
 }
