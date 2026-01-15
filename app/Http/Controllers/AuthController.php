@@ -102,12 +102,12 @@ class AuthController extends Controller
         $user = User::find($id);
         // 1. Check if user exists and hash matches the current email
         if (!$user || $hash !== sha1($user->email)) {
-            return response()->json([ 'redirect' => 'https://reneeimports.com/auth', 'message' => 'Invalid verification link.' ]);
+            return response()->json(['redirect' => 'https://reneeimports.com/auth', 'message' => 'Invalid verification link.']);
         }
 
         // 2. Check if already verified
         if ($user->hasVerifiedEmail()) { // Uses the MustVerifyEmail trait method
-            return response()->json([ 'redirect' => 'https://reneeimports.com/auth', 'message' => 'Email already verified.' ]);
+            return response()->json(['redirect' => 'https://reneeimports.com/auth', 'message' => 'Email already verified.']);
         }
 
         // 3. Mark as verified
@@ -144,5 +144,23 @@ class AuthController extends Controller
             'expires_in' => Auth::guard('api')->factory()->getTTL() * 60,
         ], 'Successful login', $status);
 
+    }
+
+    public function resendVerificationEmail(Request $request): JsonResponse
+    {
+        $request->validate([
+            'email' => ['required', 'email'],
+        ]);
+        $user = User::where('email', $request->get('email'))->first();
+        if (!$user) {
+            return ResponseHelper::error([], 'The user with the email provided does not exist.', 404);
+        }
+        $verificationToken = Str::random(60);
+        $user->verification_token = $verificationToken;
+        $user->save();
+        Mail::to($user->email)->send(new EmailVerificationMail($user));
+
+        return ResponseHelper::success($user->toArray(),
+            'Verification email has been resent to the user successfully', 201);
     }
 }

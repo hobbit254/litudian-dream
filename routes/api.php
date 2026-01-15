@@ -24,6 +24,7 @@ Route::controller(AuthController::class)->group(function () {
         ->middleware('signed');
     Route::post('login', 'login');
     Route::post('register', 'register');
+    Route::post('resendVerificationEmail','resendVerificationEmail');
 
     Route::get('categories/open', [CategoriesController::class, 'allCategories']);
     Route::get('products/open', [ProductController::class, 'allProductsOpen']);
