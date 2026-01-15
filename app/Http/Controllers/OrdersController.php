@@ -87,18 +87,24 @@ class OrdersController extends Controller
     public function createOrder(Request $request): JsonResponse
     {
         $request->validate([
-            'customer_name' => ['required', 'string'],
-            'customer_email' => ['required', 'email'],
+            // 'customer_name' => ['required', 'string'],
+            //   'customer_email' => ['required', 'email'],
             'customer_phone' => ['required', 'string'],
             'products' => ['required', 'json'],
             'total' => ['required', 'numeric'],
             'is_anonymous' => ['required', 'boolean'],
-           // 'payment_reference' => ['required', 'string', 'unique:payments,merchant_ref'],
+            // 'payment_reference' => ['required', 'string', 'unique:payments,merchant_ref'],
             'shipping_fee' => ['required', 'numeric'],
             'service_fee' => ['required', 'numeric'],
             'balance_due' => ['required', 'numeric'],
             'amount_paid' => ['required', 'numeric'],
         ]);
+
+        if ($request->has('payment_reference')) {
+            $request->validate([
+                'payment_reference' => ['required', 'string', 'unique:payments,merchant_ref'],
+            ]);
+        }
 
         DB::beginTransaction();
         try {
@@ -338,8 +344,8 @@ class OrdersController extends Controller
 
         // Build new history entry
         $status_history_entry = [
-            'status'  => $newStatus,
-            'date'    => Carbon::now()->toDateTimeString(),
+            'status' => $newStatus,
+            'date' => Carbon::now()->toDateTimeString(),
             'message' => $request->input('message'),
         ];
 
@@ -351,19 +357,18 @@ class OrdersController extends Controller
 
         // Update order with full history
         $order->update([
-            'status'                  => $newStatus,
-            'customer_name'           => $request->input('customer_name'),
-            'customer_email'          => $request->input('customer_email'),
-            'customer_phone'          => $request->input('customer_phone'),
-            'product_payment_status'  => $request->input('product_payment_status'),
+            'status' => $newStatus,
+            'customer_name' => $request->input('customer_name'),
+            'customer_email' => $request->input('customer_email'),
+            'customer_phone' => $request->input('customer_phone'),
+            'product_payment_status' => $request->input('product_payment_status'),
             'shipping_payment_status' => $request->input('shipping_payment_status'),
-            'payment_receipt'         => $request->input('payment_reference'),
-            'status_history'          => $existing_history, //
+            'payment_receipt' => $request->input('payment_reference'),
+            'status_history' => $existing_history, //
         ]);
 
         return ResponseHelper::success(['data' => $order], 'Order status updated.', 200);
     }
-
 
 
 }
