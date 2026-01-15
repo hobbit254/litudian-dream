@@ -93,7 +93,7 @@ class OrdersController extends Controller
             'products' => ['required', 'json'],
             'total' => ['required', 'numeric'],
             'is_anonymous' => ['required', 'boolean'],
-            'payment_reference' => ['required', 'string', 'unique:payments,merchant_ref'],
+           // 'payment_reference' => ['required', 'string', 'unique:payments,merchant_ref'],
             'shipping_fee' => ['required', 'numeric'],
             'service_fee' => ['required', 'numeric'],
             'balance_due' => ['required', 'numeric'],
@@ -106,8 +106,9 @@ class OrdersController extends Controller
 
             $this->savePaymentSchedule($order, $request);
 
-            $this->savePayment($order, $request);
-
+            if ($request->has('payment_reference')) {
+                $this->savePayment($order, $request);
+            }
             $this->saveProductOrderBatch(json_decode($request->input('products'), true), $order);
             DB::commit();
 
