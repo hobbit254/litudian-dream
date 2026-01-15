@@ -194,12 +194,28 @@ class PaymentController extends Controller
 
             if ($payment->payment_type === 'SHIPPING_FEE') {
                 if ($total >= $ord->shipping_fee) {
+                    $existing_history = $ord->status_history ?? [];
+                    $existing_history[] = [
+                        'status'  => 'SHIPPING_FEE_PAID',
+                        'date'    => Carbon::now()->toDateTimeString(),
+                        'message' => 'Shipping fee for the order has been paid and approved by the administrator based on the payment ref passed.',
+                    ];
+                    $ord->status_history = $existing_history;
                     $ord->shipping_payment_status = 'PAID';
+                    $ord->status = 'SHIPPING_FEE_PAID';
                     $ord->save();
                 }
             }else{
                 if ($total >= $ord->total) {
+                    $existing_history = $ord->status_history ?? [];
+                    $existing_history[] = [
+                        'status'  => 'BALANCE_PAID',
+                        'date'    => Carbon::now()->toDateTimeString(),
+                        'message' => 'Payment for the order has been paid and approved by the administrator based on the payment ref passed.',
+                    ];
+                    $ord->status_history = $existing_history;
                     $ord->product_payment_status = 'PAID';
+                    $ord->status = 'AWAITING_SHIPPING_FEE';
                     $ord->save();
                 }
             }
