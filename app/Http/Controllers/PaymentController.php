@@ -87,6 +87,7 @@ class PaymentController extends Controller
             'amount_paid' => 'required|numeric',
             'payment_reference' => 'required|unique:payments,merchant_ref',
             'payment_type' => 'required',
+            'payment_method' => 'required',
         ]);
 
         $order = Order::where(['order_number' => $request->input('order_number')])->first();
@@ -102,7 +103,7 @@ class PaymentController extends Controller
 
         $payment = Payment::create([
             'order_id' => $order->id,
-            'payment_method' => 'MPESA',
+            'payment_method' => $request->input('payment_method'),
             'phone_number' => $request->input('customer_phone'),
             'payment_amount' => $request->input('amount_paid'),
             'payment_status' => 'UNVERIFIED',
