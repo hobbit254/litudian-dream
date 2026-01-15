@@ -141,67 +141,74 @@ class PaymentController extends Controller
             'payment_method' => 'required',
         ]);
 
-        $payment = Payment::find($request->input('id'));
+        try {
+            $payment = Payment::find($request->input('id'));
 
-        if (!$payment) {
-            return ResponseHelper::error([], 'Payment not found.', 400);
-        } elseif ($payment->payment_status === 'VERIFIED') {
-            return ResponseHelper::error([], 'Payment already verified.', 400);
-        }elseif ($payment->payment_status === 'REJECTED') {
-            return ResponseHelper::error([], 'Payment already rejected.', 400);
-        }
 
-        $order = Payment::select('orders.*')
-            ->join('orders', 'orders.id', '=', 'payments.order_id')
-            ->where('payments.id', $request->input('id'))
-            ->first();
-
-        if (!$order) {
-            return ResponseHelper::error([], 'Order not found.', 400);
-        }
-
-        // Get existing history (already cast to array)
-        $existing_history = $payment->payment_history ?? [];
-
-        // Append new entry
-        $existing_history[] = [
-            'status'  => request()->input('payment_status'),
-            'date'    => Carbon::now()->toDateTimeString(),
-            'message' => 'Payment has been '. $request->input('payment_status') . ' by the administrator based on the payment ref passed.',
-        ];
-
-        // Update payment
-        $payment->payment_history = $existing_history; // ✅ no encoding
-        $payment->payment_status  = request()->input('payment_status');
-
-        if ($request->filled('payment_reference')) {
-            $payment->merchant_ref = $request->input('payment_reference');
-        }
-        if ($request->filled('payment_method')) {
-            $payment->payment_method = $request->input('payment_method');
-        }
-
-        $payment->save();
-
-        // Check if order is fully paid
-        $total = Payment::where('order_id', $order->id)
-            ->where('payment_status', 'VERIFIED')
-            ->sum('payment_amount');
-
-        if ($payment->payment_type === 'SHIPPING_FEE') {
-            if ($total >= $order->shipping_fee) {
-                $order->shipping_payment_status = 'PAID';
-                $order->save();
+            if (!$payment) {
+                return ResponseHelper::error([], 'Payment not found.', 400);
+            } elseif ($payment->payment_status === 'VERIFIED') {
+                return ResponseHelper::error([], 'Payment already verified.', 400);
+            }elseif ($payment->payment_status === 'REJECTED') {
+                return ResponseHelper::error([], 'Payment already rejected.', 400);
             }
-        }else{
-            if ($total >= $order->total) {
-                $order->product_payment_status = 'PAID';
-                $order->save();
+
+            $order = Payment::select('orders.*')
+                ->join('orders', 'orders.id', '=', 'payments.order_id')
+                ->where('payments.id', $request->input('id'))
+                ->first();
+
+            if (!$order) {
+                return ResponseHelper::error([], 'Order not found.', 400);
             }
+
+            // Get existing history (already cast to array)
+            $existing_history = $payment->payment_history ?? [];
+
+            // Append new entry
+            $existing_history[] = [
+                'status'  => request()->input('payment_status'),
+                'date'    => Carbon::now()->toDateTimeString(),
+                'message' => 'Payment has been '. $request->input('payment_status') . ' by the administrator based on the payment ref passed.',
+            ];
+
+            // Update payment
+            $payment->payment_history = $existing_history; // ✅ no encoding
+            $payment->payment_status  = request()->input('payment_status');
+
+            if ($request->filled('payment_reference')) {
+                $payment->merchant_ref = $request->input('payment_reference');
+            }
+            if ($request->filled('payment_method')) {
+                $payment->payment_method = $request->input('payment_method');
+            }
+
+            $payment->save();
+
+            $ord = Order::where(['id' => $order->id])->first();
+
+            // Check if order is fully paid
+            $total = Payment::where('order_id', $order->id)
+                ->where('payment_status', 'VERIFIED')
+                ->sum('payment_amount');
+
+            if ($payment->payment_type === 'SHIPPING_FEE') {
+                if ($total >= $ord->shipping_fee) {
+                    $ord->shipping_payment_status = 'PAID';
+                    $ord->save();
+                }
+            }else{
+                if ($total >= $ord->total) {
+                    $ord->product_payment_status = 'PAID';
+                    $ord->save();
+                }
+            }
+
+
+            return ResponseHelper::success(['data' => $payment], 'Payment status updated successfully.', 200);
+        }catch (\Exception $exception){
+            return ResponseHelper::error([], 'Something went wrong when trying to save the data.', 500);
         }
-
-
-        return ResponseHelper::success(['data' => $payment], 'Payment status updated successfully.', 200);
     }
 
 }
