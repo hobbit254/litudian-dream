@@ -82,6 +82,8 @@ Route::middleware([JwtMiddleware::class])->group(function () {
     Route::get('moq/stats', [MoqController::class, 'moqStats']);
     Route::post('moq/create', [MoqController::class, 'createMOQ']);
     Route::post('moq/close', [MoqController::class, 'closeMOQ']);
+    Route::post('moq/closeShippingFeeCollection', [MoqController::class, 'closeShippingFeeCollection']);
+    Route::post('moq/updateOrderBatchStatus', [MoqController::class, 'updateOrderBatchStatus']);
 
     // Settings
 

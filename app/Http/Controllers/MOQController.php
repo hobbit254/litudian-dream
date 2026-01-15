@@ -13,6 +13,7 @@ use App\Models\ProductOrderBatch;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use LaravelIdea\Helper\App\Models\_IH_Order_C;
 
 class MOQController extends Controller
 {
@@ -148,15 +149,24 @@ class MOQController extends Controller
         if (!$productOrderBatch) {
             return ResponseHelper::error([], 'Product order batch not found.', 404);
         }
-        $productOrderBatch->moq_status = 'AWAITING_SHIPPING_FEE';
-        $productOrderBatch->update();
 
-        // Fetch all the orders and send sms for them to pay the shipping fee
+        if ($productOrderBatch->moq_status !== 'PENDING') {
+            return ResponseHelper::error([], 'Product order batch has already been closed awaiting shipping payment or shipping.', 422);
+        }
+
+        //check first to see if all the orders have been paid for
         $orders = Order::whereIn('id', $productOrderBatch->order_ids)->get();
+        if (!$this->ordersProductPaymentStatus($orders)) {
+            return ResponseHelper::error([], 'Ensure all the orders in this batch have their order payment paid first.', 422);
+        }
+
+        $productOrderBatch->moq_status = 'AWAITING_SHIPPING_FEE';
+        $productOrderBatch->save();
+
         if ($request->input('shipping_price') == 0) {
             $this->updateShippingStatus($orders);
         } else {
-            $this->updateShippingPaymentDetails($orders, $request->input('shipping_price'));
+            $this->updateShippingPaymentDetails($orders, $request->input('shipping_price'), $productOrderBatch->id);
         }
 
 
@@ -164,17 +174,81 @@ class MOQController extends Controller
             'We have closed this Order batch and we are sending sms to the customers to pay for shipping fees.', 200);
     }
 
+    public function closeShippingFeeCollection(Request $request)
+    {
+        $request->validate([
+            'uuid' => ['required', 'string', 'max:255'],
+        ]);
+        $productOrderBatch = ProductOrderBatch::where('uuid', $request->input('uuid'))->first();
+        if (!$productOrderBatch) {
+            return ResponseHelper::error([], 'Product order batch not found.', 404);
+        }
+        $orders = Order::whereIn('id', $productOrderBatch->order_ids)->get();
+        if (!$this->ordersShippingFeePaymentStatus($orders)) {
+            return ResponseHelper::error([], 'Ensure all the orders in this batch have their order shipping fee paid first.', 422);
+        }
+        $productOrderBatch->moq_status = 'SHIPPING_FEE_PAID';
+        $productOrderBatch->shipping_fee_status = 'PAID';
+        $productOrderBatch->save();
+        return ResponseHelper::success(['data' => $productOrderBatch], "Closed the shipping payment for the batch now awaiting shipping", 200);
+    }
+
+    public function updateOrderBatchStatus(Request $request)
+    {
+        $request->validate([
+            'uuid' => ['required', 'string', 'max:255'],
+            'status' => ['required', 'string', 'max:255'],
+            'message' => ['required', 'string', 'max:255'],
+        ]);
+        $productOrderBatch = ProductOrderBatch::where('uuid', $request->input('uuid'))->first();
+        if (!$productOrderBatch) {
+            return ResponseHelper::error([], 'Product order batch not found.', 404);
+        }
+        $allowedStatuses = ['SHIPPED', 'DELIVERED', 'CANCELLED', 'SHIPPING_FEE_PAID'];
+        if (!in_array($productOrderBatch->moq_status, $allowedStatuses)) {
+            return ResponseHelper::error([], "The batch is not in a desired status to apply this action", 422);
+        }
+
+        $productOrderBatch->moq_status = $request->input('status');
+        $productOrderBatch->save();
+        $orders = Order::whereIn('id', $productOrderBatch->order_ids)->get();
+
+        foreach ($orders as $order) {
+            $status_history_entry = [
+                'status' => request()->input('status'),
+                'date' => Carbon::now()->toDateTimeString(),
+                'message' => request()->input('message'),
+            ];
+
+            // Get existing history (already cast to array)
+            $existing_history = $order->status_history ?? [];
+
+            // Append new entry
+            $existing_history[] = $status_history_entry;
+            $order->status_history = $existing_history;
+            $order->status = request()->input('status');
+            $order->save();
+
+            // trigger an alert to the customer
+        }
+        return ResponseHelper::success(['data' => $productOrderBatch], "We have updated the order batch status successfully", 200);
+    }
+
     private function updateShippingStatus($orders): void
     {
         foreach ($orders as $order) {
             $order->shipping_payment_status = 'PAID';
             $order->shipping_payment_receipt = 'FREE SHIPPING';
-            $order->update();
+            $order->save();
         }
     }
 
-    private function updateShippingPaymentDetails($orders, $shippingPrice): void
+    private function updateShippingPaymentDetails($orders, $shippingPrice, $productOrderBatchId): void
     {
+        $productOrderBatch = ProductOrderBatch::where('id', $productOrderBatchId)->first();
+        $totalShippingFee = count($orders) * $shippingPrice;
+        $productOrderBatch->shipping_fee = $totalShippingFee;
+        $productOrderBatch->save();
         foreach ($orders as $order) {
 
             // Build new history entry
@@ -203,6 +277,38 @@ class MOQController extends Controller
                 $payment_schedule->update();
             }
             SendSmsNotificationJob::dispatch($order->customer_phone, 'Kindly pay a shipping fee of ' . $shippingPrice . ' for your order with order number ' . $order->order_number);
+        }
+    }
+
+    private function ordersProductPaymentStatus($orders)
+    {
+        $totalOrders = count($orders);
+        $totalOrdersPaid = 0;
+        foreach ($orders as $order) {
+            if ($order->product_payment_status === 'PAID') {
+                $totalOrdersPaid += 1;
+            }
+        }
+        if ($totalOrdersPaid == $totalOrders) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private function ordersShippingFeePaymentStatus($orders)
+    {
+        $totalOrders = count($orders);
+        $totalOrdersPaid = 0;
+        foreach ($orders as $order) {
+            if ($order->shipping_payment_status === 'PAID') {
+                $totalOrdersPaid += 1;
+            }
+        }
+        if ($totalOrdersPaid == $totalOrders) {
+            return true;
+        } else {
+            return false;
         }
     }
 }
