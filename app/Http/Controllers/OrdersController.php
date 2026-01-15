@@ -195,7 +195,7 @@ class OrdersController extends Controller
             'is_anonymous' => $request->input('is_anonymous'),
             'status' => 'AWAITING_BALANCE',
             'status_history' => $status_history,
-            'payment_receipt' => $request->input('payment_reference'),
+            'payment_receipt' => $request->input('payment_reference') ?? '',
             'shipping_fee' => $request->input('shipping_fee'),
             'total_with_shipping' => $request->input('total'),
             'product_payment_status' => 'UNPAID',
