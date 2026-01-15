@@ -193,8 +193,8 @@ class OrdersController extends Controller
         ];
 
         $order = Order::create([
-            'customer_name' => $request->input('customer_name'),
-            'customer_email' => $request->input('customer_email'),
+            'customer_name' => $request->input('customer_name') ?? '',
+            'customer_email' => $request->input('customer_email') ?? '',
             'customer_phone' => $request->input('customer_phone'),
             'products' => $request->input('products'),
             'total' => $request->input('total'),
