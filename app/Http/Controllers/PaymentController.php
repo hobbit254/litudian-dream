@@ -147,6 +147,8 @@ class PaymentController extends Controller
             return ResponseHelper::error([], 'Payment not found.', 400);
         } elseif ($payment->payment_status === 'VERIFIED') {
             return ResponseHelper::error([], 'Payment already verified.', 400);
+        }elseif ($payment->payment_status === 'REJECTED') {
+            return ResponseHelper::error([], 'Payment already rejected.', 400);
         }
 
         $order = Payment::select('orders.*')
@@ -163,14 +165,14 @@ class PaymentController extends Controller
 
         // Append new entry
         $existing_history[] = [
-            'status'  => 'VERIFIED',
+            'status'  => request()->input('payment_status'),
             'date'    => Carbon::now()->toDateTimeString(),
-            'message' => 'Payment has been accepted by the administrator based on the payment ref passed.',
+            'message' => 'Payment has been '. $request->input('payment_status') . ' by the administrator based on the payment ref passed.',
         ];
 
         // Update payment
         $payment->payment_history = $existing_history; // ✅ no encoding
-        $payment->payment_status  = 'VERIFIED';
+        $payment->payment_status  = request()->input('payment_status');
 
         if ($request->filled('payment_reference')) {
             $payment->merchant_ref = $request->input('payment_reference');
