@@ -38,6 +38,10 @@ return [
         'africas_talking_username' => env('AFRICAS_TALKING_USERNAME'),
         'africas_talking_password' => env('AFRICAS_TALKING_PASSWORD'),
         'africas_talking_sender' => env('AFRICAS_TALKING_SENDER'),
+        'tingg_username' => env('TINGG_USERNAME'),
+        'tingg_password' => env('TINGG_PASSWORD'),
+        'tingg_auth_url' => env('TINGG_AUTH_URL'),
+        'tingg_sms_url' => env('TINGG_SMS_URL'),
     ]
 
 ];

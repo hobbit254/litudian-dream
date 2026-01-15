@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use AfricasTalking\SDK\AfricasTalking;
 use App\Http\helpers\AfricasTalkingSmsHelper;
 use App\Http\helpers\ResponseHelper;
+use App\Jobs\SendSmsNotificationJob;
 use App\Models\Order;
 use App\Models\PaymentSchedule;
 use App\Models\Product;
@@ -178,8 +179,8 @@ class MOQController extends Controller
 
             // Build new history entry
             $status_history_entry = [
-                'status'  => 'MOQ_ACHIEVED',
-                'date'    => Carbon::now()->toDateTimeString(),
+                'status' => 'MOQ_ACHIEVED',
+                'date' => Carbon::now()->toDateTimeString(),
                 'message' => "We have closed the MOQ for this order",
             ];
 
@@ -201,8 +202,7 @@ class MOQController extends Controller
                 $payment_schedule->shipping_amount = $shippingPrice;
                 $payment_schedule->update();
             }
-            $africasTalking = new AfricasTalkingSmsHelper();
-            $africasTalking::sendSmsNotification($order->customer_phone, 'Kindly pay a shipping fee of ' . $shippingPrice . '
+            SendSmsNotificationJob::dispatch($order->customer_phone, 'Kindly pay a shipping fee of ' . $shippingPrice . '
              for your order with order number ' . $order->order_number);
         }
     }
