@@ -71,8 +71,7 @@ class UsersController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
-            'role_id' => ['required', 'string', 'min:36', 'max:36'],
-        ]);
+            'role_id' => ['required', 'string', 'min:36', 'max:36']]);
 
         $verificationToken = Str::random(60);
         try {
@@ -127,6 +126,9 @@ class UsersController extends Controller
             }
             if ($request->has('email')) {
                 $user->email = $request->get('email');
+            }
+            if ($request->has('active')) {
+                $user->active = $request->get('active') ? 1 : 0;
             }
             if ($request->has('role_id')) {
                 $role = Role::where('uuid', $request->get('role_id'))->first();
