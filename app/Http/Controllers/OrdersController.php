@@ -19,8 +19,8 @@ class OrdersController extends Controller
     public function allOrders(Request $request): JsonResponse
     {
         $perPage = $request->input('per_page', 15);
-        $startDate = $request->input('start_date', Carbon::today());
-        $endDate = $request->input('end_date', Carbon::today());
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
         $order_number = $request->input('order_number');
         $customer_name = $request->input('customer_name');
         $customer_email = $request->input('customer_email');
