@@ -24,6 +24,7 @@ class OrdersController extends Controller
         $order_number = $request->input('order_number');
         $customer_name = $request->input('customer_name');
         $customer_email = $request->input('customer_email');
+        $customer_phone = $request->input('customer_phone');
         $status = $request->input('status');
         $product_payment_status = $request->input('product_payment_status');
         $moq_status = $request->input('moq_status');
@@ -46,6 +47,9 @@ class OrdersController extends Controller
         });
         $query->when($customer_email, function ($q) use ($customer_email) {
             $q->where('orders.customer_email', $customer_email);
+        });
+        $query->when($customer_phone, function ($q) use ($customer_phone) {
+            $q->where('orders.customer_phone', $customer_phone);
         });
         $query->when($status, function ($q) use ($status) {
             $q->where('orders.status', $status);
