@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Http\helpers\AfricasTalkingSmsHelper;
 use App\Http\helpers\TinggSmsHelper;
 use Exception;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -30,10 +31,11 @@ class SendSmsNotificationJob implements ShouldQueue
      * Execute the job.
      * @throws Exception
      */
-    public function handle(TinggSmsHelper $tinggSmsHelper): void
+    public function handle(TinggSmsHelper $tinggSmsHelper, AfricasTalkingSmsHelper $africasTalkingSmsHelper): void
     {
         try {
-            $tinggSmsHelper->sendSmsNotification($this->customer_phone, $this->message);
+            // $tinggSmsHelper->sendSmsNotification($this->customer_phone, $this->message);
+            $africasTalkingSmsHelper->sendSmsNotification($this->customer_phone, $this->message);
         } catch (Exception $exception) {
             logger($exception->getMessage());
             throw $exception;

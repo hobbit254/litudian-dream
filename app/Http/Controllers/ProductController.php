@@ -48,7 +48,7 @@ class ProductController extends Controller
         // Filters
         $query->when($startDate, fn($q) => $q->whereDate('products.created_at', '>=', $startDate));
         $query->when($endDate, fn($q) => $q->whereDate('products.created_at', '<=', $endDate));
-        $query->when($category_name, fn($q) => $q->whereLike('categories.category_name', $category_name));
+        $query->when($category_name, fn($q) => $q->whereLike('categories.slug', $category_name));
         $query->when($product_name, fn($q) => $q->where('products.product_name', $product_name));
 
         $query->when($min_price && $max_price, fn($q) =>
@@ -114,10 +114,11 @@ class ProductController extends Controller
              )');
             });
 
+
         // Filters
         $query->when($startDate, fn($q) => $q->whereDate('products.created_at', '>=', $startDate));
         $query->when($endDate, fn($q) => $q->whereDate('products.created_at', '<=', $endDate));
-        $query->when($category_name, fn($q) => $q->whereLike('categories.category_name', $category_name));
+        $query->when($category_name, fn($q) => $q->whereLike('categories.slug', $category_name));
         $query->when($product_name, fn($q) => $q->where('products.product_name', $product_name));
 
         $query->when($min_price && $max_price, fn($q) =>

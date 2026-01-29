@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\helpers\ResponseHelper;
+use App\Jobs\SendSmsNotificationJob;
 use App\Mail\EmailVerificationMail;
 use App\Models\Role;
 use App\Models\User;

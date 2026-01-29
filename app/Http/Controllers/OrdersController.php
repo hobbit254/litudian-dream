@@ -185,7 +185,7 @@ class OrdersController extends Controller
     public function saveOrder(Request $request): mixed
     {
         $message = 'Deposit of KES ' . $request->input('amount_paid') . ' received (includes KES ' .
-            $request->input('service_fee') / 2 . ' service fee)';
+            $request->input('service_fee')  . ' service fee)';
         $status_history[] = [
             'status' => 'PENDING',
             'date' => Carbon::now(),
