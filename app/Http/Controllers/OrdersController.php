@@ -49,7 +49,7 @@ class OrdersController extends Controller
             $q->where('orders.customer_email', $customer_email);
         });
         $query->when($customer_phone, function ($q) use ($customer_phone) {
-            $q->where('orders.customer_phone', $customer_phone);
+            $q->whereRaw("REPLACE(orders.customer_phone, '+', '') = ?", [str_replace('+', '', $customer_phone)]);
         });
         $query->when($status, function ($q) use ($status) {
             $q->where('orders.status', $status);
